@@ -25,8 +25,8 @@ function initMenu(): void {
 
   uploadButton?.addEventListener('click', () => {
     console.log('Upload button clicked');
-    // For now, just show an alert since this feature is not implemented
-    alert('仕様書のアップロード機能は現在開発中です。');
+    // Send message to main process to open upload window
+    window.api.send('open-upload', {});
   });
 
   browserButton?.addEventListener('click', () => {

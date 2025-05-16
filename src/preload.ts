@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld(
   'api', {
     send: (channel: string, data: any) => {
       // whitelist channels
-      const validChannels: string[] = ['message-from-renderer', 'open-browser'];
+      const validChannels: string[] = ['message-from-renderer', 'open-browser', 'open-upload', 'specification-upload', 'go-back-to-menu'];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       }
