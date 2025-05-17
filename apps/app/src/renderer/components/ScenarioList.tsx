@@ -16,13 +16,14 @@ interface Scenario {
 
 interface ScenarioListProps {
   featureId: string;
+  alwaysExpanded?: boolean;
 }
 
-const ScenarioList: React.FC<ScenarioListProps> = ({ featureId }) => {
+const ScenarioList: React.FC<ScenarioListProps> = ({ featureId, alwaysExpanded = false }) => {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<boolean>(false);
+  const [expanded, setExpanded] = useState<boolean>(alwaysExpanded);
 
   // シナリオ一覧を取得
   useEffect(() => {
@@ -81,7 +82,7 @@ const ScenarioList: React.FC<ScenarioListProps> = ({ featureId }) => {
     setExpanded(!expanded);
   };
 
-  if (!expanded) {
+  if (!expanded && !alwaysExpanded) {
     return (
       <div className="scenario-list-collapsed">
         <button className="toggle-button" onClick={toggleExpanded}>
@@ -95,9 +96,11 @@ const ScenarioList: React.FC<ScenarioListProps> = ({ featureId }) => {
     <div className="scenario-list">
       <div className="scenario-list-header">
         <h4>シナリオ一覧</h4>
-        <button className="toggle-button" onClick={toggleExpanded}>
-          閉じる
-        </button>
+        {!alwaysExpanded && (
+          <button className="toggle-button" onClick={toggleExpanded}>
+            閉じる
+          </button>
+        )}
       </div>
 
       {loading ? (

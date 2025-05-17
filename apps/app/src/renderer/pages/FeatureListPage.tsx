@@ -1,25 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { PageType } from '../App';
+import { PageType, Feature } from '../App';
 import ScenarioList from '../components/ScenarioList';
 import '../styles/FeatureListPage.css';
 
-// 機能インターフェース
-interface Feature {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  projectId?: string | null;
-  project?: any | null;
-}
+// Feature interface is now imported from App.tsx
 
 interface FeatureListPageProps {
   onNavigate: (page: PageType) => void;
   projectId?: string;
+  onSelectFeature?: (feature: Feature) => void;
 }
 
-const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId }) => {
+const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId, onSelectFeature }) => {
   const [features, setFeatures] = useState<Feature[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,7 +116,11 @@ const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId
               <p>最初の機能のID: {features[0]?.id || 'なし'}</p>
             </div>
             {features.map((feature) => (
-              <div key={feature.id} className="feature-card">
+              <div
+                key={feature.id}
+                className="feature-card"
+                onClick={() => onSelectFeature && onSelectFeature(feature)}
+              >
                 <h3>{feature.name}</h3>
                 <p className="feature-description">{feature.description}</p>
                 <div className="feature-meta">
@@ -132,6 +128,7 @@ const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId
                     作成日時: {formatDate(feature.createdAt)}
                   </p>
                 </div>
+                <div className="view-details-button">詳細を表示</div>
                 <ScenarioList featureId={feature.id} />
               </div>
             ))}

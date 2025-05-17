@@ -4,6 +4,8 @@
   border-radius: 4px;
   padding: 1rem;
   background-color: #f9f9f9;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .scenario-list-collapsed {
@@ -43,6 +45,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  width: 100%;
 }
 
 .scenario-card {

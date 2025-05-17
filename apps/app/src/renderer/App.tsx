@@ -5,9 +5,10 @@ import UploadPage from './pages/UploadPage';
 import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectListPage from './pages/ProjectListPage';
 import FeatureListPage from './pages/FeatureListPage';
+import FeatureDetailPage from './pages/FeatureDetailPage';
 
 // Define page types
-export type PageType = 'project-create' | 'menu' | 'browser' | 'upload' | 'project-list' | 'feature-list';
+export type PageType = 'project-create' | 'menu' | 'browser' | 'upload' | 'project-list' | 'feature-list' | 'feature-detail';
 
 // Define Electron API interface
 declare global {
@@ -28,6 +29,17 @@ interface Project {
   updatedAt?: string;
 }
 
+// Feature interface
+export interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  projectId?: string | null;
+  project?: any | null;
+}
+
 const App: React.FC = () => {
   // State to track current page
   const [currentPage, setCurrentPage] = useState<PageType>('project-create');
@@ -40,6 +52,8 @@ const App: React.FC = () => {
   });
   // State to store projects list
   const [projects, setProjects] = useState<Project[]>([]);
+  // State to store selected feature
+  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
 
   // Check if project exists in localStorage on mount
   useEffect(() => {
@@ -142,6 +156,16 @@ const App: React.FC = () => {
         <FeatureListPage
           onNavigate={navigateTo}
           projectId={project?.id}
+          onSelectFeature={(feature) => {
+            setSelectedFeature(feature);
+            navigateTo('feature-detail');
+          }}
+        />
+      )}
+      {currentPage === 'feature-detail' && selectedFeature && (
+        <FeatureDetailPage
+          onNavigate={navigateTo}
+          feature={selectedFeature}
         />
       )}
     </>
