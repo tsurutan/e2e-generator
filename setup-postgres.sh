@@ -13,7 +13,7 @@ npx prisma init
 # 環境変数ファイルを作成
 cat > .env << EOL
 # Database Configuration
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/e2e_app_db?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/testpilot_db?schema=public"
 
 # Application Configuration
 PORT=3000
@@ -26,7 +26,7 @@ EOL
 # 開発環境用の環境変数ファイルを作成
 cat > .env.development << EOL
 # Database Configuration
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/e2e_app_db?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/testpilot_db?schema=public"
 
 # Application Configuration
 PORT=3000

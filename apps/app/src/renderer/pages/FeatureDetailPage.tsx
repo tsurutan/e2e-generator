@@ -194,7 +194,7 @@ const FeatureDetailPage: React.FC<FeatureDetailPageProps> = ({featureId}) => {
             </main>
 
             <footer className="py-3 px-4 text-center text-xs text-muted-foreground border-t">
-                <p>© 2023 E2E Testing Application</p>
+                <p>© 2023 TestPilot</p>
             </footer>
         </div>
     );

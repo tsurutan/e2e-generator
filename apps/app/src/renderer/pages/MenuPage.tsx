@@ -32,7 +32,7 @@ const MenuPage: React.FC<MenuPageProps> = () => {
   return (
     <div className="flex flex-col h-screen">
       <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
-        <h1 className="text-2xl font-bold m-0">E2E Testing Application</h1>
+        <h1 className="text-2xl font-bold m-0">TestPilot</h1>
         {project && (
           <div className="mt-2 text-sm bg-primary-foreground/20 py-2 px-3 rounded inline-block">
             <p className="m-0">現在のプロジェクト: <strong>{project.name}</strong> ({project.url})</p>
@@ -105,7 +105,7 @@ const MenuPage: React.FC<MenuPageProps> = () => {
       </main>
 
       <footer className="py-3 px-4 text-center text-xs text-muted-foreground border-t">
-        <p>© 2023 E2E Testing Application</p>
+        <p>© 2023 TestPilot</p>
       </footer>
     </div>
   );

@@ -3,10 +3,10 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16
-    container_name: e2e-app-postgres
+    container_name: testpilot-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: e2e_app_db
+      POSTGRES_DB: testpilot_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -15,11 +15,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - e2e-app-network
+      - testpilot-network
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: e2e-app-pgadmin
+    container_name: testpilot-pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
@@ -32,12 +32,12 @@ services:
     depends_on:
       - postgres
     networks:
-      - e2e-app-network
+      - testpilot-network
 
 volumes:
   postgres_data:
   pgadmin_data:
 
 networks:
-  e2e-app-network:
+  testpilot-network:
     driver: bridge

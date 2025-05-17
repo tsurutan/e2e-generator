@@ -1,4 +1,4 @@
-# E2E Testing Application
+# TestPilot
 
 シンプルなElectronベースのブラウザアプリケーションで、Webサイトの表示とユーザーインタラクションのイベントログ記録機能を提供します。
 
@@ -36,7 +36,7 @@
 ## プロジェクト構造
 
 ```
-e2e-app/
+testpilot/
 ├── apps/
 │   ├── api/               # APIサーバー
 │   │   ├── dist/          # コンパイル済みのJavaScriptファイル
@@ -123,8 +123,8 @@ e2e-app/
 ### インストール
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/e2e-app.git
-cd e2e-app
+git clone https://github.com/yourusername/testpilot.git
+cd testpilot
 
 # 依存パッケージをインストール
 npm install
@@ -203,7 +203,7 @@ npx prisma generate
 
 ```
 # データベース設定
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/e2e_app_db?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/testpilot_db?schema=public"
 
 # アプリケーション設定
 PORT=3000
@@ -217,10 +217,10 @@ OPENAI_API_KEY=your-openai-api-key
 ```
 
 #### PostgreSQL接続情報
-- **接続文字列**: postgresql://postgres:postgres@localhost:5432/e2e_app_db?schema=public
+- **接続文字列**: postgresql://postgres:postgres@localhost:5432/testpilot_db?schema=public
 - **ホスト**: localhost
 - **ポート**: 5432
-- **データベース名**: e2e_app_db
+- **データベース名**: testpilot_db
 - **ユーザー名**: postgres
 - **パスワード**: postgres
 
