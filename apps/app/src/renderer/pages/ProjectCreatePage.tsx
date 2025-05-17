@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { PageType } from '../App';
-import '../styles/ProjectCreatePage.css';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
 
 interface ProjectCreatePageProps {
   onNavigate: (page: PageType) => void;
@@ -87,58 +90,62 @@ const ProjectCreatePage: React.FC<ProjectCreatePageProps> = ({ onNavigate, onPro
   };
 
   return (
-    <div className="project-create-page">
-      <header className="header">
-        <h1>プロジェクト作成</h1>
+    <div className="flex flex-col h-screen bg-gray-50">
+      <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
+        <h1 className="text-2xl font-bold m-0">プロジェクト作成</h1>
       </header>
 
-      <main className="content">
-        <div className="form-container">
-          <form id="project-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="project-name">プロジェクト名:</label>
-              <input
-                id="project-name"
-                type="text"
-                value={projectName}
-                onChange={handleNameChange}
-                placeholder="プロジェクト名を入力してください"
-              />
-              {nameError && <div className="error-message">{nameError}</div>}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="project-url">プロジェクトURL:</label>
-              <input
-                id="project-url"
-                type="text"
-                value={projectUrl}
-                onChange={handleUrlChange}
-                placeholder="https://www.example.com"
-              />
-              {urlError && <div className="error-message">{urlError}</div>}
-            </div>
-
-            <div className="button-container">
-              <button
-                type="submit"
-                className="button submit-button"
-                disabled={apiStatus?.loading}
-              >
-                {apiStatus?.loading ? '保存中...' : '作成'}
-              </button>
-            </div>
-
-            {apiStatus?.error && (
-              <div className="error-message api-error">
-                APIエラー: {apiStatus.error}
+      <main className="flex-1 p-6 flex justify-center items-start">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader>
+            <CardTitle>新規プロジェクト</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form id="project-form" onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="project-name">プロジェクト名</Label>
+                <Input
+                  id="project-name"
+                  type="text"
+                  value={projectName}
+                  onChange={handleNameChange}
+                  placeholder="プロジェクト名を入力してください"
+                />
+                {nameError && <p className="text-sm text-destructive mt-1">{nameError}</p>}
               </div>
-            )}
-          </form>
-        </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="project-url">プロジェクトURL</Label>
+                <Input
+                  id="project-url"
+                  type="text"
+                  value={projectUrl}
+                  onChange={handleUrlChange}
+                  placeholder="https://www.example.com"
+                />
+                {urlError && <p className="text-sm text-destructive mt-1">{urlError}</p>}
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Button
+                  type="submit"
+                  disabled={apiStatus?.loading}
+                >
+                  {apiStatus?.loading ? '保存中...' : '作成'}
+                </Button>
+              </div>
+
+              {apiStatus?.error && (
+                <div className="text-destructive text-sm p-2 bg-destructive/10 rounded mt-2">
+                  APIエラー: {apiStatus.error}
+                </div>
+              )}
+            </form>
+          </CardContent>
+        </Card>
       </main>
 
-      <footer className="footer">
+      <footer className="py-3 px-4 text-center text-xs text-muted-foreground border-t">
         <p>© 2023 E2E Testing Application</p>
       </footer>
     </div>

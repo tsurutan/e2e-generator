@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PageType } from '../App';
-import '../styles/UploadPage.css';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 
 interface UploadPageProps {
   onNavigate: (page: PageType) => void;
@@ -171,121 +174,139 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate, projectId, projectN
 
 
   return (
-    <div className="upload-page">
-      <header className="header">
-        <h1>仕様書のアップロード</h1>
+    <div className="flex flex-col h-screen">
+      <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
+        <h1 className="text-2xl font-bold m-0">仕様書のアップロード</h1>
       </header>
 
-      <main className="content">
-        <div className="upload-container">
-          <form id="upload-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>プロジェクト:</label>
-              <div className="project-info">
-                {projectName ? projectName : 'プロジェクトが選択されていません'}
+      <main className="flex-1 p-5 overflow-auto">
+        <Card className="mb-6 shadow-md">
+          <CardHeader>
+            <CardTitle>仕様書アップロード</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form id="upload-form" onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label>プロジェクト</Label>
+                <div className="bg-muted/50 p-3 rounded text-sm font-medium">
+                  {projectName ? projectName : 'プロジェクトが選択されていません'}
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="specification-text">仕様書のテキスト:</label>
-              <textarea
-                id="specification-text"
-                value={specificationText}
-                onChange={handleTextChange}
-                placeholder="ここに仕様書のテキストを入力してください..."
-              />
-            </div>
-
-            <div className="or-divider">または</div>
-
-            <div className="form-group file-upload">
-              <label htmlFor="specification-file" className="file-upload-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px', verticalAlign: 'middle' }}>
-                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"></path>
-                </svg>
-                ファイルを選択
-              </label>
-              <input
-                type="file"
-                id="specification-file"
-                onChange={handleFileChange}
-                accept=".txt,.md,.pdf,.doc,.docx"
-              />
-              <div className="file-name">
-                {selectedFile ? selectedFile.name : 'ファイルが選択されていません'}
+              <div className="space-y-2">
+                <Label htmlFor="specification-text">仕様書のテキスト</Label>
+                <Textarea
+                  id="specification-text"
+                  value={specificationText}
+                  onChange={handleTextChange}
+                  placeholder="ここに仕様書のテキストを入力してください..."
+                  className="min-h-[200px]"
+                />
               </div>
-            </div>
 
-            <div className="button-container">
-              <button
-                type="button"
-                className="button back-button"
-                onClick={handleBackClick}
-              >
-                戻る
-              </button>
-              <button
-                type="submit"
-                className="button submit-button"
-                disabled={!projectId}
-              >
-                送信
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="relative flex items-center py-4">
+                <div className="flex-grow border-t border-muted"></div>
+                <span className="mx-4 flex-shrink text-muted-foreground text-sm">または</span>
+                <div className="flex-grow border-t border-muted"></div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="specification-file" className="inline-flex items-center px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded cursor-pointer transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="mr-2">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"></path>
+                  </svg>
+                  ファイルを選択
+                </Label>
+                <input
+                  type="file"
+                  id="specification-file"
+                  onChange={handleFileChange}
+                  accept=".txt,.md,.pdf,.doc,.docx"
+                  className="hidden"
+                />
+                <div className="text-sm text-muted-foreground mt-2">
+                  {selectedFile ? selectedFile.name : 'ファイルが選択されていません'}
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackClick}
+                >
+                  戻る
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!projectId}
+                >
+                  送信
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
         {loading && (
-          <div className="result-container loading">
-            <p>仕様書から機能を抽出中です...</p>
-          </div>
+          <Card className="mb-6">
+            <CardContent className="p-6 text-center">
+              <p className="text-muted-foreground">仕様書から機能を抽出中です...</p>
+            </CardContent>
+          </Card>
         )}
 
         {error && (
-          <div className="result-container error">
-            <h2>エラーが発生しました</h2>
-            <p>{error}</p>
-          </div>
+          <Card className="mb-6 border-destructive">
+            <CardHeader>
+              <CardTitle className="text-destructive">エラーが発生しました</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-destructive">{error}</p>
+            </CardContent>
+          </Card>
         )}
 
         {features.length > 0 && (
-          <div className="result-container">
-            <h2>抽出された機能一覧</h2>
-            <div className="features-list">
-              {features.map((feature, index) => (
-                <div key={index} className="feature-item">
-                  <h3>{feature.name}</h3>
-                  <p>{feature.description}</p>
-                </div>
-              ))}
-            </div>
-            <div className="button-container save-buttons">
-              <button
-                type="button"
-                className="button save-button"
-                onClick={() => handleSaveFeatures()}
-                disabled={!projectId || saving}
-              >
-                機能を保存する
-              </button>
-              <button
-                type="button"
-                className="button view-button"
-                onClick={() => onNavigate('feature-list')}
-              >
-                機能一覧を表示する
-              </button>
-            </div>
-            {saveSuccess && (
-              <div className="success-message">
-                <p>機能が正常に保存されました。</p>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>抽出された機能一覧</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {features.map((feature, index) => (
+                  <div key={index} className="bg-muted/30 p-4 rounded-md border-l-4 border-l-primary">
+                    <h3 className="font-medium text-lg mb-2">{feature.name}</h3>
+                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button
+                  onClick={() => handleSaveFeatures()}
+                  disabled={!projectId || saving}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  機能を保存する
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => onNavigate('feature-list')}
+                >
+                  機能一覧を表示する
+                </Button>
+              </div>
+              {saveSuccess && (
+                <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md text-center">
+                  <p>機能が正常に保存されました。</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
       </main>
 
-      <footer className="footer">
+      <footer className="py-3 px-4 text-center text-xs text-muted-foreground border-t">
         <p>© 2023 E2E Testing Application</p>
       </footer>
     </div>

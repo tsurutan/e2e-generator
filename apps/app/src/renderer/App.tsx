@@ -6,6 +6,7 @@ import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectListPage from './pages/ProjectListPage';
 import FeatureListPage from './pages/FeatureListPage';
 import FeatureDetailPage from './pages/FeatureDetailPage';
+import './styles/global.css';
 
 // Define page types
 export type PageType = 'project-create' | 'menu' | 'browser' | 'upload' | 'project-list' | 'feature-list' | 'feature-detail';

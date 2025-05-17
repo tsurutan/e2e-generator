@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PageType } from '../App';
 import LabelPopup from '../components/LabelPopup';
 import LabelListPanel from '../components/LabelListPanel';
-import '../styles/BrowserPage.css';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 
 interface BrowserPageProps {
   onNavigate: (page: PageType) => void;
@@ -360,9 +361,9 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl, proje
     `;
 
     // 順番に実行する
-    webviewRef.current.executeJavaScript(addStyleScript)
-      .then(() => webviewRef.current.executeJavaScript(removeHighlightsScript))
-      .then(() => webviewRef.current.executeJavaScript(highlightScript))
+    webviewRef.current?.executeJavaScript(addStyleScript)
+      .then(() => webviewRef.current?.executeJavaScript(removeHighlightsScript))
+      .then(() => webviewRef.current?.executeJavaScript(highlightScript))
       .then((count) => {
         if (count > 0) {
           addLog('success', `${count}個の要素をハイライトしました: ${selector}`);
@@ -437,33 +438,45 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl, proje
   };
 
   return (
-    <div className="browser-page">
-      <div className="controls">
-        <button className="back-button" onClick={handleBackClick}>
-          ← メニューに戻る
-        </button>
-        <div className="url-container">
-          <input
+    <div className="flex flex-col h-screen">
+      <div className="flex flex-wrap p-3 gap-3 bg-muted/30 border-b items-center">
+        <Button
+          variant="outline"
+          onClick={handleBackClick}
+          className="flex items-center gap-1"
+          size="sm"
+        >
+          <span className="mr-1">←</span> メニューに戻る
+        </Button>
+        <div className="flex flex-1 min-w-[300px]">
+          <Input
             id="url-input"
             type="text"
             value={url}
             onChange={handleUrlChange}
             onKeyPress={handleUrlKeyPress}
             placeholder="Enter URL (e.g., https://www.google.com)"
+            className="rounded-r-none"
           />
-          <button id="load-button" onClick={loadURL}>Load</button>
+          <Button
+            id="load-button"
+            onClick={loadURL}
+            className="rounded-l-none"
+          >
+            Load
+          </Button>
         </div>
-        <button
-          className={`label-register-button ${isLabelRegisterActive ? 'active' : ''}`}
+        <Button
+          variant={isLabelRegisterActive ? "destructive" : "default"}
           onClick={handleLabelRegisterClick}
+          size="sm"
         >
           ラベル登録
-        </button>
-
+        </Button>
       </div>
 
-      <div className="container">
-        <div id="webview-container" className="webview-container">
+      <div className="flex flex-1 overflow-hidden">
+        <div id="webview-container" className="flex-[2] relative">
           {/* Webview will be created dynamically */}
         </div>
 

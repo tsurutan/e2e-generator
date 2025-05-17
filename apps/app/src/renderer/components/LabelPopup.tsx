@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 
 interface LabelPopupProps {
   elementInfo: {
@@ -21,17 +25,17 @@ const LabelPopup: React.FC<LabelPopupProps> = ({ elementInfo, onSave, onCancel }
   };
 
   return (
-    <div className="label-popup-overlay">
-      <div className="label-popup">
-        <h3>ラベル登録</h3>
-        <div className="element-info">
-          <strong>要素:</strong> {elementInfo.selector}
-          {elementInfo.text && <div><strong>テキスト:</strong> {elementInfo.text}</div>}
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-[400px] max-w-[90%]">
+        <h3 className="text-lg font-semibold mb-4">ラベル登録</h3>
+        <div className="bg-muted/50 p-3 rounded mb-4 font-mono text-sm break-all">
+          <div className="mb-1"><span className="font-semibold">要素:</span> {elementInfo.selector}</div>
+          {elementInfo.text && <div><span className="font-semibold">テキスト:</span> {elementInfo.text}</div>}
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="label-name">名前</label>
-            <input
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="label-name">名前</Label>
+            <Input
               id="label-name"
               type="text"
               value={name}
@@ -40,22 +44,22 @@ const LabelPopup: React.FC<LabelPopupProps> = ({ elementInfo, onSave, onCancel }
               required
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="label-description">説明</label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="label-description">説明</Label>
+            <Textarea
               id="label-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="説明を入力（任意）"
             />
           </div>
-          <div className="buttons">
-            <button type="button" className="cancel-button" onClick={onCancel}>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button type="button" variant="outline" onClick={onCancel}>
               キャンセル
-            </button>
-            <button type="submit" className="save-button">
+            </Button>
+            <Button type="submit">
               保存
-            </button>
+            </Button>
           </div>
         </form>
       </div>

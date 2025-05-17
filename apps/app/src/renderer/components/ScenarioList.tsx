@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/ScenarioList.css';
+import { Button } from './ui/button';
 
 // シナリオインターフェース
 interface Scenario {
@@ -84,56 +84,64 @@ const ScenarioList: React.FC<ScenarioListProps> = ({ featureId, alwaysExpanded =
 
   if (!expanded && !alwaysExpanded) {
     return (
-      <div className="scenario-list-collapsed">
-        <button className="toggle-button" onClick={toggleExpanded}>
+      <div className="mt-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleExpanded}
+          className="w-full"
+        >
           シナリオを表示 ({scenarios.length})
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="scenario-list">
-      <div className="scenario-list-header">
-        <h4>シナリオ一覧</h4>
+    <div className="mt-2 space-y-3">
+      <div className="flex justify-between items-center">
+        <h4 className="text-sm font-medium">シナリオ一覧</h4>
         {!alwaysExpanded && (
-          <button className="toggle-button" onClick={toggleExpanded}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleExpanded}
+            className="h-7 px-2"
+          >
             閉じる
-          </button>
+          </Button>
         )}
       </div>
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="text-center py-4 text-muted-foreground text-sm">読み込み中...</div>
       ) : error ? (
-        <div className="error-message">エラー: {error}</div>
+        <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">エラー: {error}</div>
       ) : scenarios.length === 0 ? (
-        <div className="no-scenarios">
+        <div className="text-center py-4 text-muted-foreground text-sm">
           <p>シナリオがありません。</p>
         </div>
       ) : (
-        <div className="scenarios">
+        <div className="space-y-3">
           {scenarios.map((scenario) => (
-            <div key={scenario.id} className="scenario-card">
-              <h4>{scenario.title}</h4>
+            <div key={scenario.id} className="border rounded-md p-3 bg-card/50">
+              <h4 className="font-medium mb-1">{scenario.title}</h4>
               {scenario.description && (
-                <p className="scenario-description">{scenario.description}</p>
+                <p className="text-sm text-muted-foreground mb-3">{scenario.description}</p>
               )}
-              <div className="scenario-steps">
-                <div className="scenario-step">
-                  <span className="step-keyword">Given:</span> {scenario.given}
+              <div className="space-y-2 text-sm">
+                <div className="bg-muted/30 p-2 rounded">
+                  <span className="font-semibold text-primary">Given:</span> {scenario.given}
                 </div>
-                <div className="scenario-step">
-                  <span className="step-keyword">When:</span> {scenario.when}
+                <div className="bg-muted/30 p-2 rounded">
+                  <span className="font-semibold text-primary">When:</span> {scenario.when}
                 </div>
-                <div className="scenario-step">
-                  <span className="step-keyword">Then:</span> {scenario.then}
+                <div className="bg-muted/30 p-2 rounded">
+                  <span className="font-semibold text-primary">Then:</span> {scenario.then}
                 </div>
               </div>
-              <div className="scenario-meta">
-                <p className="scenario-date">
-                  作成日時: {formatDate(scenario.createdAt)}
-                </p>
+              <div className="mt-2 text-xs text-muted-foreground">
+                <p>作成日時: {formatDate(scenario.createdAt)}</p>
               </div>
             </div>
           ))}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PageType, Feature } from '../App';
 import ScenarioList from '../components/ScenarioList';
-import '../styles/FeatureListPage.css';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 
 // Feature interface is now imported from App.tsx
 
@@ -79,64 +80,70 @@ const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId
   };
 
   return (
-    <div className="feature-list-page">
-      <header className="header">
-        <h1>機能一覧</h1>
+    <div className="flex flex-col h-screen">
+      <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
+        <h1 className="text-2xl font-bold m-0">機能一覧</h1>
       </header>
 
-      <main className="content">
-        <div className="controls">
-          <button className="back-button" onClick={handleBackClick}>
-            ← メニューに戻る
-          </button>
-          <button className="upload-button" onClick={handleUploadClick}>
+      <main className="flex-1 p-5 overflow-auto">
+        <div className="flex justify-between mb-5">
+          <Button
+            variant="outline"
+            onClick={handleBackClick}
+            className="flex items-center gap-1"
+          >
+            <span className="mr-1">←</span> メニューに戻る
+          </Button>
+          <Button onClick={handleUploadClick}>
             + 仕様書からの機能抽出
-          </button>
+          </Button>
         </div>
 
         {loading ? (
-          <div className="loading">読み込み中...</div>
+          <div className="text-center py-10 text-muted-foreground">読み込み中...</div>
         ) : error ? (
-          <div className="error-message">エラー: {error}</div>
+          <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4">エラー: {error}</div>
         ) : features.length === 0 ? (
-          <div className="no-features">
-            <p>機能がありません。仕様書をアップロードして機能を抽出してください。</p>
-            <div className="debug-info">
-              <p><strong>デバッグ情報:</strong></p>
+          <div className="text-center py-10 bg-muted/50 rounded-lg">
+            <p className="text-muted-foreground mb-4">機能がありません。仕様書をアップロードして機能を抽出してください。</p>
+            <div className="text-xs bg-muted p-3 rounded inline-block text-left">
+              <p className="font-semibold mb-1">デバッグ情報:</p>
               <p>projectId: {projectId || 'なし'}</p>
               <p>featuresの型: {typeof features}</p>
               <p>featuresは配列か: {Array.isArray(features) ? 'はい' : 'いいえ'}</p>
             </div>
           </div>
         ) : (
-          <div className="feature-list">
-            <div className="debug-info">
-              <p><strong>デバッグ情報:</strong></p>
+          <div>
+            <div className="text-xs bg-muted p-3 rounded mb-4 inline-block">
+              <p className="font-semibold mb-1">デバッグ情報:</p>
               <p>表示する機能数: {features.length}</p>
               <p>最初の機能のID: {features[0]?.id || 'なし'}</p>
             </div>
-            {features.map((feature) => (
-              <div
-                key={feature.id}
-                className="feature-card"
-                onClick={() => onSelectFeature && onSelectFeature(feature)}
-              >
-                <h3>{feature.name}</h3>
-                <p className="feature-description">{feature.description}</p>
-                <div className="feature-meta">
-                  <p className="feature-date">
-                    作成日時: {formatDate(feature.createdAt)}
-                  </p>
-                </div>
-                <div className="view-details-button">詳細を表示</div>
-                <ScenarioList featureId={feature.id} />
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {features.map((feature) => (
+                <Card
+                  key={feature.id}
+                  className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary"
+                  onClick={() => onSelectFeature && onSelectFeature(feature)}
+                >
+                  <CardContent className="p-5">
+                    <h3 className="text-lg font-semibold mb-2">{feature.name}</h3>
+                    <p className="text-muted-foreground text-sm mb-4">{feature.description}</p>
+                    <div className="text-xs text-muted-foreground mb-3">
+                      <p>作成日時: {formatDate(feature.createdAt)}</p>
+                    </div>
+                    <div className="inline-block bg-primary text-primary-foreground text-xs px-2 py-1 rounded mb-4">詳細を表示</div>
+                    <ScenarioList featureId={feature.id} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </main>
 
-      <footer className="footer">
+      <footer className="py-3 px-4 text-center text-xs text-muted-foreground border-t">
         <p>© 2023 E2E Testing Application</p>
       </footer>
     </div>
