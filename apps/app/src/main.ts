@@ -68,9 +68,35 @@ ipcMain.on('open-upload', () => {
 });
 
 // Handle specification upload
-ipcMain.on('specification-upload', (event, data) => {
+ipcMain.on('specification-upload', async (event, data) => {
   console.log('Specification upload received:', data);
-  // In a real application, you would process the uploaded specification here
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = 'http://localhost:3000/api/features/extract';
+
+    // APIに仕様書データを送信
+    const response = await axios.post(apiUrl, data);
+    console.log('Features extracted from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'features-extracted',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to extract features from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'features-extraction-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
 });
 
 // Handle go back to menu
@@ -137,6 +163,152 @@ ipcMain.on('get-projects', async (event) => {
     if (event.sender) {
       event.sender.send('message-from-main', {
         type: 'projects-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle save features
+ipcMain.on('save-features', async (event, data) => {
+  console.log('Save features requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = 'http://localhost:3000/api/features/save';
+
+    // APIに機能データを送信
+    const response = await axios.post(apiUrl, data);
+    console.log('Features saved to API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'features-saved',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to save features to API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'features-save-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle get features
+ipcMain.on('get-features', async (event, data) => {
+  console.log('Get features requested:', data);
+
+  try {
+    // APIサーバーのURL
+    let apiUrl = 'http://localhost:3000/api/features';
+
+    // プロジェクトIDが指定されている場合は、そのプロジェクトの機能を取得
+    if (data && data.projectId) {
+      apiUrl = `http://localhost:3000/api/projects/${data.projectId}/features`;
+    }
+
+    // APIから機能一覧を取得
+    const response = await axios.get(apiUrl);
+    console.log('Features loaded from API:', response.data);
+    console.log('API URL used:', apiUrl);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      // レスポンスデータが配列か確認
+      const featuresData = Array.isArray(response.data) ? response.data : [];
+      console.log('Sending features to renderer:', featuresData);
+
+      event.sender.send('message-from-main', {
+        type: 'features-loaded',
+        data: featuresData
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to load features from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'features-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle save label
+ipcMain.on('save-label', async (event, data) => {
+  console.log('Save label requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = 'http://localhost:3000/api/labels/save';
+
+    // APIにラベルデータを送信
+    const response = await axios.post(apiUrl, {
+      label: data
+    });
+    console.log('Label saved to API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'label-save-success',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to save label to API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'label-save-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle get labels by URL
+ipcMain.on('get-labels-by-url', async (event, data) => {
+  console.log('Get labels by URL requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = 'http://localhost:3000/api/labels/url';
+
+    // URLとプロジェクトIDをクエリパラメータとして追加
+    const params = {
+      url: data.url,
+      projectId: data.projectId
+    };
+
+    // APIからラベル一覧を取得
+    const response = await axios.get(apiUrl, { params });
+    console.log('Labels loaded from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'labels-by-url-loaded',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to load labels by URL from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'labels-by-url-error',
         error: error.message || 'Unknown error'
       });
     }

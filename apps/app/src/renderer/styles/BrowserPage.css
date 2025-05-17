@@ -6,9 +6,12 @@
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
   padding: 10px;
   background-color: #f5f5f5;
   border-bottom: 1px solid #ddd;
+  position: relative;
+  gap: 10px;
 }
 
 .back-button {
@@ -23,6 +26,12 @@
 
 .back-button:hover {
   background-color: #e5e5e5;
+}
+
+.url-container {
+  display: flex;
+  flex: 1;
+  min-width: 300px;
 }
 
 #url-input {
@@ -46,6 +55,296 @@ button:hover {
   background-color: #3367d6;
 }
 
+.label-register-button,
+.label-list-button {
+  padding: 8px 15px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.label-register-button.active,
+.label-list-button.active {
+  background-color: #f44336;
+}
+
+.label-register-button:hover,
+.label-list-button:hover {
+  background-color: #3367d6;
+}
+
+.label-register-button.active:hover,
+.label-list-button.active:hover {
+  background-color: #d32f2f;
+}
+
+/* Label Registration Popup Styles */
+.label-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.label-popup {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.label-popup h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 18px;
+}
+
+.label-popup .element-info {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.label-popup .form-group {
+  margin-bottom: 15px;
+}
+
+.label-popup label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.label-popup input,
+.label-popup textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.label-popup textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.label-popup .buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.label-popup button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.label-popup .cancel-button {
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+.label-popup .save-button {
+  background-color: #4285f4;
+  color: white;
+}
+
+.label-popup .cancel-button:hover {
+  background-color: #e5e5e5;
+}
+
+.label-popup .save-button:hover {
+  background-color: #3367d6;
+}
+
+/* Label List Sidebar Styles */
+.label-list-sidebar {
+  flex: 1;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-left: 1px solid #ddd;
+  overflow-y: auto;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.label-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.label-list-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.refresh-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.refresh-button:hover {
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+.current-url {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.url-text {
+  margin-top: 5px;
+  font-family: monospace;
+  color: #555;
+}
+
+.loading-labels {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.retry-button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.no-labels {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+/* Saved Labels Styles */
+.saved-labels {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 15px;
+}
+
+.labels-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.label-item {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.label-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.label-header h4 {
+  margin: 0;
+  padding: 0;
+}
+
+.focus-button {
+  background: none;
+  border: none;
+  color: #4285f4;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.focus-button:hover {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.focus-icon {
+  display: inline-block;
+}
+
+.label-details {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #666;
+}
+
+.label-date {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #888;
+}
+
+.label-selector {
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0;
+  word-break: break-all;
+}
+
+.label-description {
+  font-size: 13px;
+  color: #555;
+  margin-top: 5px;
+  font-style: italic;
+}
+
 .container {
   display: flex;
   flex: 1;
@@ -66,75 +365,4 @@ button:hover {
   display: inline-flex;
 }
 
-.log-container {
-  flex: 1;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-left: 1px solid #ddd;
-  overflow-y: auto;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-}
 
-.log-container h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-.event-log {
-  flex: 1;
-  overflow-y: auto;
-  font-family: monospace;
-  white-space: pre-wrap;
-  font-size: 12px;
-  margin-bottom: 10px;
-}
-
-.log-entry {
-  margin-bottom: 5px;
-  padding: 5px;
-  border-bottom: 1px solid #eee;
-}
-
-.timestamp {
-  color: #888;
-  font-size: 10px;
-}
-
-.log-type {
-  font-weight: bold;
-}
-
-.log-type.error {
-  color: #f44336;
-}
-
-.log-type.loading {
-  color: #ff9800;
-}
-
-.log-type.loaded {
-  color: #4caf50;
-}
-
-.log-type.navigation {
-  color: #2196f3;
-}
-
-.log-type.page-event {
-  color: #9c27b0;
-}
-
-.log-type.info {
-  color: #607d8b;
-}
-
-.clear-log {
-  margin-top: auto;
-  background-color: #f44336;
-}
-
-.clear-log:hover {
-  background-color: #d32f2f;
-}

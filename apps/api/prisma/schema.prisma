@@ -11,12 +11,43 @@ datasource db {
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  name        String   @db.VarChar(100)
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
   url         String
   description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  features    Feature[]
+  labels      Label[]
+
+  @@map("projects")
+}
+
+model Feature {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+
+  @@map("features")
+}
+
+model Label {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  description String?
+  selector    String
+  xpath       String?
+  elementText String?
+  url         String
+  queryParams String?
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("projects")
+  @@map("labels")
 }

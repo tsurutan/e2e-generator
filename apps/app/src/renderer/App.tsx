@@ -4,9 +4,10 @@ import BrowserPage from './pages/BrowserPage';
 import UploadPage from './pages/UploadPage';
 import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectListPage from './pages/ProjectListPage';
+import FeatureListPage from './pages/FeatureListPage';
 
 // Define page types
-export type PageType = 'project-create' | 'menu' | 'browser' | 'upload' | 'project-list';
+export type PageType = 'project-create' | 'menu' | 'browser' | 'upload' | 'project-list' | 'feature-list';
 
 // Define Electron API interface
 declare global {
@@ -121,6 +122,7 @@ const App: React.FC = () => {
         <BrowserPage
           onNavigate={navigateTo}
           projectUrl={project?.url}
+          projectId={project?.id}
         />
       )}
       {currentPage === 'upload' && (
@@ -132,6 +134,12 @@ const App: React.FC = () => {
         <ProjectListPage
           onNavigate={navigateTo}
           onSelectProject={handleSelectProject}
+        />
+      )}
+      {currentPage === 'feature-list' && (
+        <FeatureListPage
+          onNavigate={navigateTo}
+          projectId={project?.id}
         />
       )}
     </>

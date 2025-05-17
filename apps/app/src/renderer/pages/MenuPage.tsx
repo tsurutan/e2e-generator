@@ -10,7 +10,7 @@ interface MenuPageProps {
 const MenuPage: React.FC<MenuPageProps> = ({ onNavigate, project }) => {
   // Handle feature list button click
   const handleFeaturesClick = () => {
-    alert('機能一覧は現在開発中です。');
+    onNavigate('feature-list');
   };
 
   // Handle upload button click

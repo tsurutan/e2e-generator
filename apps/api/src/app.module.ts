@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import { HelloModule } from './hello/hello.module';
 import { ProjectsModule } from './projects/projects.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { FeaturesModule } from './features/features.module';
+import { LabelsModule } from './labels/labels.module';
 import * as path from 'path';
 
 @Module({
@@ -18,7 +20,9 @@ import * as path from 'path';
     }),
     PrismaModule,
     HelloModule,
-    ProjectsModule
+    ProjectsModule,
+    FeaturesModule,
+    LabelsModule
   ],
   controllers: [AppController],
   providers: [AppService],

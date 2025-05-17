@@ -6,13 +6,18 @@ interface ElectronAPI {
   receive: (channel: string, func: (...args: any[]) => void) => void;
 }
 
+// Define the WebView API interface for communication from webview to parent
+interface WebViewAPI {
+  sendToParent: (channel: string, data: any) => void;
+}
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld(
   'api', {
     send: (channel: string, data: any) => {
       // whitelist channels
-      const validChannels: string[] = ['message-from-renderer', 'open-browser', 'open-upload', 'specification-upload', 'go-back-to-menu', 'save-project', 'get-projects'];
+      const validChannels: string[] = ['message-from-renderer', 'open-browser', 'open-upload', 'specification-upload', 'go-back-to-menu', 'save-project', 'get-projects', 'save-features', 'get-features', 'save-label', 'get-labels-by-url'];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       }
@@ -25,4 +30,19 @@ contextBridge.exposeInMainWorld(
       }
     }
   } as ElectronAPI
+);
+
+// Expose API for webview to communicate with parent window
+contextBridge.exposeInMainWorld(
+  'electronAPI', {
+    sendToParent: (channel: string, data: any) => {
+      // whitelist channels
+      const validChannels: string[] = ['element-click'];
+      if (validChannels.includes(channel)) {
+        // Use ipcRenderer to send a message to the main process
+        // which will then forward it to the parent window
+        ipcRenderer.sendToHost(channel, data);
+      }
+    }
+  } as WebViewAPI
 );

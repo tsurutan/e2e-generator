@@ -2,6 +2,8 @@
 
 シンプルなElectronベースのブラウザアプリケーションで、Webサイトの表示とユーザーインタラクションのイベントログ記録機能を提供します。
 
+詳細な仕様については[SPECIFICATION.md](docs/SPECIFICATION.md)を参照してください。
+
 ## 機能
 
 - プロジェクト作成画面でプロジェクト名とURLを設定
@@ -9,7 +11,11 @@
 - メニュー画面で現在のプロジェクト情報を表示
 - ブラウザ機能でプロジェクトURLのWebサイトを表示
 - クリック、ホバー、フォーム送信、入力変更などのイベントを自動的に記録
+- 「ラベル登録」ボタンを有効にすると、ホバーしたDOM要素を赤い点線で囲んで視覚的に強調表示
 - イベントログのリアルタイム表示
+- 仕様書アップロード機能でテキスト仕様書から機能一覧を自動抽出
+- OpenAI GPT-4oを活用した機能名と説明の自動生成
+- 抽出された機能一覧の保存と表示
 
 ## 技術スタック
 
@@ -22,6 +28,8 @@
 - **Prisma**: 次世代のNode.jsとTypeScript用ORM
 - **PostgreSQL**: リレーショナルデータベース
 - **Docker**: コンテナ化プラットフォーム
+- **LangChain**: 大規模言語モデル（LLM）アプリケーション構築フレームワーク
+- **OpenAI API**: GPT-4oを使用した自然言語処理
 
 ## プロジェクト構造
 
@@ -33,6 +41,9 @@ e2e-app/
 │   │   ├── node_modules/  # 依存パッケージ
 │   │   ├── src/           # ソースコードディレクトリ
 │   │   │   ├── hello/       # Helloモジュール
+│   │   │   ├── projects/    # プロジェクト管理モジュール
+│   │   │   ├── features/    # 機能管理モジュール
+│   │   │   ├── prisma/      # Prisma ORM関連
 │   │   │   ├── app.module.ts # メインモジュール
 │   │   │   ├── app.controller.ts # メインコントローラー
 │   │   │   ├── app.service.ts # メインサービス
@@ -52,6 +63,8 @@ e2e-app/
 │       │       │   ├── BrowserPage.tsx    # ブラウザ操作画面
 │       │       │   ├── MenuPage.tsx       # メニュー画面
 │       │       │   ├── ProjectCreatePage.tsx # プロジェクト作成画面
+│       │       │   ├── ProjectListPage.tsx # プロジェクト一覧画面
+│       │       │   ├── FeatureListPage.tsx # 機能一覧画面
 │       │       │   └── UploadPage.tsx     # 仕様書アップロード画面
 │       │       └── styles/                # CSSスタイル
 │       ├── package.json   # プロジェクト設定
@@ -80,23 +93,15 @@ e2e-app/
 - コントローラー、サービス、モジュールの明確な分離
 - エンドポイント例: `/api/hello` - 簡単なテスト用エンドポイント
 
-### プロジェクト作成画面 (ProjectCreatePage.tsx)
-- アプリケーションの初回起動時に表示
-- プロジェクト名とURLを入力して保存
-- 入力値のバリデーション機能
+### 主要コンポーネント
 
-### メニュー画面 (MenuPage.tsx)
-- プロジェクト作成後に表示されるメインメニュー
-- 現在のプロジェクト情報（名前とURL）を表示
-- 「機能一覧」「仕様書のアップロード」「ブラウザ操作」の3つの機能へのアクセス
-- モダンでユーザーフレンドリーなインターフェース
+各コンポーネントの詳細な仕様は[SPECIFICATION.md](docs/SPECIFICATION.md#%E6%A9%9F%E8%83%BD%E4%BB%95%E6%A7%98)を参照してください。
 
-### ブラウザ機能 (BrowserPage.tsx)
-- プロジェクトURLを使用してWebサイトを表示
-- URLを手動で変更することも可能
-- Webviewを使用してWebコンテンツを表示
-- イベントリスナーを注入してユーザーインタラクションを追跡
-- イベントログをリアルタイムで表示
+- **プロジェクト作成画面** (ProjectCreatePage.tsx): プロジェクト名とURLを設定
+- **メニュー画面** (MenuPage.tsx): 各機能へのアクセスを提供
+- **ブラウザ機能** (BrowserPage.tsx): Webサイト表示とイベント記録
+- **仕様書アップロード機能** (UploadPage.tsx): 仕様書から機能抽出
+- **機能一覧画面** (FeatureListPage.tsx): 機能一覧の表示と管理
 
 ## セキュリティ対策
 
@@ -203,6 +208,9 @@ NODE_ENV=development
 
 # API設定
 API_PREFIX=api
+
+# OpenAI設定
+OPENAI_API_KEY=your-openai-api-key
 ```
 
 #### PostgreSQL接続情報
@@ -228,44 +236,28 @@ Prisma Studioはブラウザでデータベースを管理できるツールで�
 
 ### APIエンドポイント
 
-```
-GET /api/hello - 簡単なテスト用エンドポイント
+主要なAPIエンドポイントは以下の通りです。詳細な仕様とレスポンス例は[SPECIFICATION.md](docs/SPECIFICATION.md#api%E4%BB%95%E6%A7%98)を参照してください。
 
+```
 # プロジェクト関連のエンドポイント
 GET /api/projects - 全プロジェクトを取得
 GET /api/projects/:id - 指定したプロジェクトを取得
 POST /api/projects - 新規プロジェクトを作成
-PUT /api/projects/:id - プロジェクトを更新
-DELETE /api/projects/:id - プロジェクトを削除
-```
+GET /api/projects/:id/features - 指定したプロジェクトの機能一覧を取得
 
-レスポンス例:
-```json
-# GET /api/hello
-{
-  "message": "Hello from NestJS API!"
-}
-
-# GET /api/projects
-[
-  {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "name": "Example Project",
-    "url": "https://example.com",
-    "description": "This is an example project",
-    "createdAt": "2023-01-01T00:00:00.000Z",
-    "updatedAt": "2023-01-01T00:00:00.000Z"
-  }
-]
+# 機能関連のエンドポイント
+POST /api/features/extract - 仕様書から機能を抽出
+POST /api/features/save - 機能を保存
 ```
 
 ## 今後の開発予定
 
-- 「機能一覧」と「仕様書のアップロード」機能の実装
+詳細な開発ロードマップは[SPECIFICATION.md](docs/SPECIFICATION.md)を参照してください。
+
 - テスト自動化機能の追加
 - ブラウザセッションの保存と復元
 - ネットワークリクエストのモニタリング
-- テストレポート生成機能
+- 機能一覧からテストケースの自動生成
 
 ## ライセンス
 

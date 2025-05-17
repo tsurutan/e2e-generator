@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PageType } from '../App';
+import LabelPopup from '../components/LabelPopup';
+import LabelListPanel from '../components/LabelListPanel';
 import '../styles/BrowserPage.css';
 
 interface BrowserPageProps {
   onNavigate: (page: PageType) => void;
   projectUrl?: string;
+  projectId?: string;
 }
 
 interface LogEntry {
@@ -14,12 +17,27 @@ interface LogEntry {
   message: string;
 }
 
-const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => {
+interface ElementInfo {
+  selector: string;
+  text?: string;
+}
+
+const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl, projectId }) => {
   const [url, setUrl] = useState(projectUrl || 'https://www.google.com');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logIdCounter, setLogIdCounter] = useState(0);
+  const [isLabelRegisterActive, setIsLabelRegisterActive] = useState(false);
+  const [showLabelPopup, setShowLabelPopup] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<ElementInfo | null>(null);
+  const [labelSaving, setLabelSaving] = useState(false);
+  const [labelSaveError, setLabelSaveError] = useState<string | null>(null);
+  const [labelSaveSuccess, setLabelSaveSuccess] = useState(false);
+  const [labels, setLabels] = useState<any[]>([]);
+  const [loadingLabels, setLoadingLabels] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [currentUrl, setCurrentUrl] = useState('');
+  const [showLabelList, setShowLabelList] = useState(false);
   const webviewRef = useRef<Electron.WebviewTag | null>(null);
-  const logContainerRef = useRef<HTMLDivElement>(null);
 
   // Update URL when projectUrl changes
   useEffect(() => {
@@ -57,31 +75,48 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => 
     };
   }, []);
 
-  // Add a log entry
-  const addLog = (type: string, message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const newLog: LogEntry = {
-      id: logIdCounter,
-      timestamp,
-      type,
-      message
+  // Listen for messages from the main process
+  useEffect(() => {
+    // Listen for messages from main process
+    const handleMessage = (message: any) => {
+      if (message.type === 'label-save-success') {
+        console.log('Label saved successfully:', message.data);
+        setLabelSaving(false);
+        setLabelSaveSuccess(true);
+        setLabelSaveError(null);
+        addLog('success', `ラベル「${message.data.name}」を保存しました`);
+      } else if (message.type === 'label-save-error') {
+        console.error('Error saving label:', message.error);
+        setLabelSaving(false);
+        setLabelSaveSuccess(false);
+        setLabelSaveError(message.error);
+        addLog('error', `ラベル保存エラー: ${message.error}`);
+      } else if (message.type === 'labels-by-url-loaded') {
+        console.log('Labels loaded successfully:', message.data);
+        setLabels(message.data);
+        setLoadingLabels(false);
+        setLabelError(null);
+        addLog('success', `${message.data.length}個のラベルを読み込みました`);
+      } else if (message.type === 'labels-by-url-error') {
+        console.error('Error loading labels:', message.error);
+        setLabels([]);
+        setLoadingLabels(false);
+        setLabelError(message.error);
+        addLog('error', `ラベル読み込みエラー: ${message.error}`);
+      }
     };
 
-    setLogs(prevLogs => [...prevLogs, newLog]);
-    setLogIdCounter(prevId => prevId + 1);
+    // Register message listener
+    window.api.receive('message-from-main', handleMessage);
 
-    // Auto-scroll to bottom
-    setTimeout(() => {
-      if (logContainerRef.current) {
-        logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-      }
-    }, 0);
-  };
+    // No cleanup needed as we can't remove the listener due to the API design
+    return () => {};
+  }, []);
 
-  // Clear logs
-  const clearLogs = () => {
-    setLogs([]);
-    addLog('info', 'Log cleared');
+  // Add a log entry (コンソールに出力するだけ)
+  const addLog = (type: string, message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[${timestamp}] ${type}: ${message}`);
   };
 
   // Load URL in webview
@@ -114,6 +149,12 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => 
     webview.addEventListener('did-finish-load', () => {
       addLog('loaded', `Page loaded: ${webview.getURL()}`);
 
+      // 現在のURLを更新
+      setCurrentUrl(webview.getURL());
+
+      // ラベル一覧を更新
+      refreshLabels();
+
       // Inject event listeners into the page
       injectEventListeners(webview);
     });
@@ -125,7 +166,19 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => 
     // Console message events
     webview.addEventListener('console-message', (event) => {
       if (event.message.startsWith('[EVENT]')) {
-        addLog('page-event', event.message.replace('[EVENT] ', ''));
+        const eventMessage = event.message.replace('[EVENT] ', '');
+        addLog('page-event', eventMessage);
+
+        // Check for label registration events
+        if (eventMessage.startsWith('LABEL_REGISTER:')) {
+          try {
+            const data = JSON.parse(eventMessage.replace('LABEL_REGISTER:', ''));
+            setSelectedElement(data);
+            setShowLabelPopup(true);
+          } catch (error) {
+            addLog('error', `Failed to parse label data: ${error}`);
+          }
+        }
       }
     });
   };
@@ -133,6 +186,41 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => 
   // Inject event listeners into the loaded page
   const injectEventListeners = (webview: Electron.WebviewTag) => {
     const script = `
+      // Add CSS for hover highlight if not already added
+      if (!document.getElementById('e2e-app-styles')) {
+        const style = document.createElement('style');
+        style.id = 'e2e-app-styles';
+        style.textContent = \`
+          .e2e-app-hover-highlight {
+            outline: 2px dashed red !important;
+            outline-offset: 2px !important;
+          }
+        \`;
+        document.head.appendChild(style);
+      }
+
+      // Function to handle mouseover events for hover highlight
+      function handleElementHover(e) {
+        const target = e.target;
+        // Remove highlight from any previously highlighted element
+        const highlighted = document.querySelector('.e2e-app-hover-highlight');
+        if (highlighted) {
+          highlighted.classList.remove('e2e-app-hover-highlight');
+        }
+        // Add highlight to current element
+        target.classList.add('e2e-app-hover-highlight');
+      }
+
+      // Function to handle mouseout events for hover highlight
+      function handleElementLeave(e) {
+        const target = e.target;
+        target.classList.remove('e2e-app-hover-highlight');
+      }
+
+      // Add hover highlight event listeners
+      document.addEventListener('mouseover', handleElementHover);
+      document.addEventListener('mouseout', handleElementLeave);
+
       // Track mouse clicks
       document.addEventListener('click', (e) => {
         let target = e.target;
@@ -201,21 +289,177 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => 
     onNavigate('menu');
   };
 
+  // ラベル一覧を更新する関数
+  const refreshLabels = () => {
+    if (!projectId) return;
+
+    // ラベル一覧を読み込む
+    setLoadingLabels(true);
+    setLabelError(null);
+    setLabels([]);
+
+    // 現在のURLを取得
+    let url = '';
+    if (webviewRef.current) {
+      url = webviewRef.current.getURL();
+      setCurrentUrl(url);
+    }
+
+    // ラベル一覧を取得するリクエストを送信
+    addLog('info', `URL ${url} のラベルを読み込み中...`);
+    window.api.send('get-labels-by-url', {
+      url: url,
+      projectId
+    });
+  };
+
+  // 要素をハイライトする関数
+  const focusElement = (selector: string) => {
+    if (!webviewRef.current) return;
+
+    // ステップバイステップで実行してエラーを特定しやすくする
+
+    // ステップ1: スタイルを追加する
+    const addStyleScript = `
+      if (!document.getElementById('e2e-app-highlight-style')) {
+        const style = document.createElement('style');
+        style.id = 'e2e-app-highlight-style';
+        style.textContent = '.e2e-app-element-highlight { outline: 2px dashed red !important; outline-offset: 2px !important; }';
+        document.head.appendChild(style);
+      }
+      true;
+    `;
+
+    // ステップ2: 前回のハイライトを削除する
+    const removeHighlightsScript = `
+      const previousHighlights = document.querySelectorAll('.e2e-app-element-highlight');
+      previousHighlights.forEach(el => {
+        el.classList.remove('e2e-app-element-highlight');
+      });
+      true;
+    `;
+
+    // ステップ3: 要素をハイライトする
+    // セレクタをJSONでエスケープして安全に渡す
+    const safeSelector = JSON.stringify(selector);
+    const highlightScript = `
+      try {
+        const elements = document.querySelectorAll(${safeSelector});
+        let count = 0;
+        elements.forEach(el => {
+          el.classList.add('e2e-app-element-highlight');
+          // 要素が表示されているか確認し、必要に応じてスクロール
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          count++;
+        });
+        count;
+      } catch (e) {
+        console.error('Error highlighting elements:', e);
+        -1;
+      }
+    `;
+
+    // 順番に実行する
+    webviewRef.current.executeJavaScript(addStyleScript)
+      .then(() => webviewRef.current.executeJavaScript(removeHighlightsScript))
+      .then(() => webviewRef.current.executeJavaScript(highlightScript))
+      .then((count) => {
+        if (count > 0) {
+          addLog('success', `${count}個の要素をハイライトしました: ${selector}`);
+        } else if (count === 0) {
+          addLog('warning', `要素が見つかりませんでした: ${selector}`);
+        } else {
+          addLog('error', `セレクタのエラー: ${selector}`);
+        }
+      })
+      .catch(error => {
+        addLog('error', `ハイライト失敗: ${error.message}`);
+      });
+  };
+
+  // Handle label register button click
+  const handleLabelRegisterClick = () => {
+    const newState = !isLabelRegisterActive;
+    setIsLabelRegisterActive(newState);
+
+    // ラベル一覧表示中の場合は閉じる
+    if (showLabelList) {
+      setShowLabelList(false);
+    }
+
+    // Update the label register mode in the webview
+    if (webviewRef.current) {
+      // Inject script to toggle label register mode
+      const script = `
+        // Function to handle click events in label register mode
+        function handleClick(e) {
+          if (${newState}) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const target = e.target;
+            const tagName = target.tagName.toLowerCase();
+            const id = target.id ? '#' + target.id : '';
+            const classes = target.className ? '.' + target.className.replace(/ /g, '.').replace(/e2e-app-hover-highlight/g, '') : '';
+            const text = target.innerText ? target.innerText.substring(0, 20) + (target.innerText.length > 20 ? '...' : '') : '';
+            const selector = tagName + id + classes;
+
+            // Send data to the parent window for custom popup
+            const elementData = {
+              selector: selector,
+              text: text
+            };
+            console.log('[EVENT] LABEL_REGISTER:' + JSON.stringify(elementData));
+
+            return false;
+          }
+        }
+
+        // Remove existing click event listener if any
+        document.removeEventListener('click', handleClick, true);
+
+        // Add click event listener if label register mode is active
+        if (${newState}) {
+          document.addEventListener('click', handleClick, true);
+          console.log('[EVENT] Label register mode: ON');
+        } else {
+          console.log('[EVENT] Label register mode: OFF');
+        }
+      `;
+
+      webviewRef.current.executeJavaScript(script)
+        .catch(error => {
+          addLog('error', `Failed to update label register mode: ${error.message}`);
+        });
+
+      addLog('info', `ラベル登録モード: ${newState ? 'オン' : 'オフ'}`);
+    }
+  };
+
   return (
     <div className="browser-page">
       <div className="controls">
         <button className="back-button" onClick={handleBackClick}>
           ← メニューに戻る
         </button>
-        <input
-          id="url-input"
-          type="text"
-          value={url}
-          onChange={handleUrlChange}
-          onKeyPress={handleUrlKeyPress}
-          placeholder="Enter URL (e.g., https://www.google.com)"
-        />
-        <button id="load-button" onClick={loadURL}>Load</button>
+        <div className="url-container">
+          <input
+            id="url-input"
+            type="text"
+            value={url}
+            onChange={handleUrlChange}
+            onKeyPress={handleUrlKeyPress}
+            placeholder="Enter URL (e.g., https://www.google.com)"
+          />
+          <button id="load-button" onClick={loadURL}>Load</button>
+        </div>
+        <button
+          className={`label-register-button ${isLabelRegisterActive ? 'active' : ''}`}
+          onClick={handleLabelRegisterClick}
+        >
+          ラベル登録
+        </button>
+
       </div>
 
       <div className="container">
@@ -223,20 +467,76 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl }) => 
           {/* Webview will be created dynamically */}
         </div>
 
-        <div className="log-container" ref={logContainerRef}>
-          <h3>Event Log</h3>
-          <div id="event-log" className="event-log">
-            {logs.map(log => (
-              <div key={log.id} className="log-entry">
-                <span className="timestamp">[{log.timestamp}] </span>
-                <span className={`log-type ${log.type}`}>{log.type}: </span>
-                {log.message}
-              </div>
-            ))}
-          </div>
-          <button className="clear-log" onClick={clearLogs}>Clear Log</button>
-        </div>
+        <LabelListPanel
+          labels={labels}
+          loading={loadingLabels}
+          error={labelError}
+          currentUrl={currentUrl}
+          onRefresh={refreshLabels}
+          onFocusElement={focusElement}
+        />
       </div>
+
+      {/* Label Registration Popup */}
+      {showLabelPopup && selectedElement && (
+        <LabelPopup
+          elementInfo={selectedElement}
+          onSave={(name, description) => {
+            if (!projectId) {
+              addLog('error', 'プロジェクトIDが設定されていません。プロジェクトを作成してください。');
+              setShowLabelPopup(false);
+              setSelectedElement(null);
+              return;
+            }
+
+            setLabelSaving(true);
+            setLabelSaveError(null);
+            setLabelSaveSuccess(false);
+
+            // Get current URL from webview
+            let currentUrl = '';
+            let queryParams = null;
+
+            if (webviewRef.current) {
+              currentUrl = webviewRef.current.getURL();
+
+              // Extract query parameters if present
+              try {
+                const urlObj = new URL(currentUrl);
+                if (urlObj.search) {
+                  queryParams = urlObj.search; // Includes the '?' character
+                  currentUrl = currentUrl.replace(urlObj.search, ''); // Remove query params from base URL
+                }
+              } catch (error) {
+                console.error('Error parsing URL:', error);
+              }
+            }
+
+            // Save label to database via API
+            const labelData = {
+              name,
+              description,
+              selector: selectedElement.selector,
+              elementText: selectedElement.text,
+              url: currentUrl,
+              queryParams,
+              projectId
+            };
+
+            addLog('info', `ラベル「${name}」を保存中...`);
+            window.api.send('save-label', labelData);
+
+            setShowLabelPopup(false);
+            setSelectedElement(null);
+          }}
+          onCancel={() => {
+            setShowLabelPopup(false);
+            setSelectedElement(null);
+          }}
+        />
+      )}
+
+
     </div>
   );
 };
