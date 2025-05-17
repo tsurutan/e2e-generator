@@ -5,17 +5,9 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "strict": true,
-    "outDir": "dist",
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "jsx": "react",
-    "lib": ["DOM", "ES2020"]
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

@@ -17,6 +17,19 @@
   font-size: 24px;
 }
 
+.project-info {
+  margin-top: 10px;
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.project-info p {
+  margin: 0;
+}
+
 .content {
   flex: 1;
   display: flex;

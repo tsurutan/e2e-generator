@@ -4,9 +4,10 @@ import '../styles/MenuPage.css';
 
 interface MenuPageProps {
   onNavigate: (page: PageType) => void;
+  project: { name: string; url: string } | null;
 }
 
-const MenuPage: React.FC<MenuPageProps> = ({ onNavigate }) => {
+const MenuPage: React.FC<MenuPageProps> = ({ onNavigate, project }) => {
   // Handle feature list button click
   const handleFeaturesClick = () => {
     alert('機能一覧は現在開発中です。');
@@ -22,16 +23,36 @@ const MenuPage: React.FC<MenuPageProps> = ({ onNavigate }) => {
     onNavigate('browser');
   };
 
+  // Handle project list button click
+  const handleProjectListClick = () => {
+    onNavigate('project-list');
+  };
+
   return (
     <div className="menu-page">
       <header className="header">
         <h1>E2E Testing Application</h1>
+        {project && (
+          <div className="project-info">
+            <p>現在のプロジェクト: <strong>{project.name}</strong> ({project.url})</p>
+          </div>
+        )}
       </header>
-      
+
       <main className="content">
         <div className="menu-container">
-          <button 
-            className="menu-button" 
+          <button
+            className="menu-button"
+            onClick={handleProjectListClick}
+          >
+            <svg className="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"></path>
+            </svg>
+            プロジェクト一覧
+          </button>
+
+          <button
+            className="menu-button"
             onClick={handleFeaturesClick}
           >
             <svg className="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -39,9 +60,9 @@ const MenuPage: React.FC<MenuPageProps> = ({ onNavigate }) => {
             </svg>
             機能一覧
           </button>
-          
-          <button 
-            className="menu-button" 
+
+          <button
+            className="menu-button"
             onClick={handleUploadClick}
           >
             <svg className="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -49,9 +70,9 @@ const MenuPage: React.FC<MenuPageProps> = ({ onNavigate }) => {
             </svg>
             仕様書のアップロード
           </button>
-          
-          <button 
-            className="menu-button" 
+
+          <button
+            className="menu-button"
             onClick={handleBrowserClick}
           >
             <svg className="menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -61,7 +82,7 @@ const MenuPage: React.FC<MenuPageProps> = ({ onNavigate }) => {
           </button>
         </div>
       </main>
-      
+
       <footer className="footer">
         <p>© 2023 E2E Testing Application</p>
       </footer>

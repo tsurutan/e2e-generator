@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: e2e-app-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: e2e_app_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - e2e-app-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: e2e-app-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - e2e-app-network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  e2e-app-network:
+    driver: bridge
