@@ -10,7 +10,9 @@ import {
   SaveScenarioDto,
   SaveScenariosDto,
   ExtractScenariosDto,
+  CodeResponseDto,
 } from './dto';
+import { generatePlaywrightCode } from './utils/playwright-code-generator';
 
 @Injectable()
 export class ScenariosService {
@@ -286,6 +288,68 @@ export class ScenariosService {
       return scenario;
     } catch (error) {
       this.logger.error('シナリオ取得中にエラーが発生しました', error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * シナリオからPlaywrightコードを生成する
+   * @param id シナリオID
+   * @param projectUrl プロジェクトのURL（オプション）
+   * @returns 生成されたコード
+   */
+  async generateCode(id: string, projectUrl?: string): Promise<CodeResponseDto> {
+    try {
+      this.logger.log(`シナリオID ${id} のPlaywrightコードを生成します`);
+
+      // シナリオを取得
+      const scenario = await this.prisma.scenario.findUnique({
+        where: { id },
+        include: {
+          feature: {
+            include: {
+              project: true,
+            },
+          },
+        },
+      });
+
+      if (!scenario) {
+        throw new NotFoundException(`シナリオID ${id} が見つかりません`);
+      }
+
+      // プロジェクトIDを取得
+      const projectId = scenario.feature?.project?.id;
+
+      // プロジェクトのURLを取得
+      let url = projectUrl;
+      if (!url && projectId) {
+        const project = await this.prisma.project.findUnique({
+          where: { id: projectId },
+        });
+        if (project) {
+          url = project.url;
+        }
+      }
+
+      // プロジェクトに関連するラベルを取得
+      const labels = projectId
+        ? await this.prisma.label.findMany({
+            where: { projectId },
+          })
+        : [];
+
+      // Playwrightコードを生成
+      const code = generatePlaywrightCode(scenario, labels, url);
+
+      this.logger.log(`シナリオID ${id} のPlaywrightコードを生成しました`);
+
+      return {
+        code,
+        scenarioId: id,
+      };
+    } catch (error) {
+      this.logger.error('コード生成中にエラーが発生しました', error.stack);
       throw error;
     }
   }

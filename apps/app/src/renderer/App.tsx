@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import MenuPage from './pages/MenuPage';
 import BrowserPage from './pages/BrowserPage';
 import UploadPage from './pages/UploadPage';
@@ -6,10 +7,9 @@ import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectListPage from './pages/ProjectListPage';
 import FeatureListPage from './pages/FeatureListPage';
 import FeatureDetailPage from './pages/FeatureDetailPage';
+import ScenarioDetailPage from './pages/ScenarioDetailPage';
+import { AppProvider } from './contexts/AppContext';
 import './styles/global.css';
-
-// Define page types
-export type PageType = 'project-create' | 'menu' | 'browser' | 'upload' | 'project-list' | 'feature-list' | 'feature-detail';
 
 // Define Electron API interface
 declare global {
@@ -21,155 +21,35 @@ declare global {
   }
 }
 
-// Project interface
-interface Project {
-  id?: string;
-  name: string;
-  url: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+// FeatureDetail wrapper component to handle params
+const FeatureDetailWrapper: React.FC = () => {
+  const { featureId } = useParams<{ featureId: string }>();
+  return <FeatureDetailPage featureId={featureId} />;
+};
 
-// Feature interface
-export interface Feature {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  projectId?: string | null;
-  project?: any | null;
-}
+// ScenarioDetail wrapper component to handle params
+const ScenarioDetailWrapper: React.FC = () => {
+  const { scenarioId } = useParams<{ scenarioId: string }>();
+  return <ScenarioDetailPage scenarioId={scenarioId} />;
+};
 
 const App: React.FC = () => {
-  // State to track current page
-  const [currentPage, setCurrentPage] = useState<PageType>('project-create');
-  // State to store project information
-  const [project, setProject] = useState<Project | null>(null);
-  // State to track API operation status
-  const [apiStatus, setApiStatus] = useState<{ loading: boolean; error: string | null }>({
-    loading: false,
-    error: null
-  });
-  // State to store projects list
-  const [projects, setProjects] = useState<Project[]>([]);
-  // State to store selected feature
-  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
-
-  // Check if project exists in localStorage on mount
-  useEffect(() => {
-    const savedProject = localStorage.getItem('project');
-    if (savedProject) {
-      try {
-        const parsedProject = JSON.parse(savedProject);
-        setProject(parsedProject);
-        setCurrentPage('menu');
-      } catch (error) {
-        console.error('Failed to parse saved project:', error);
-        localStorage.removeItem('project');
-      }
-    }
-  }, []);
-
-  // Listen for messages from the main process
-  useEffect(() => {
-    // Handle messages from main process
-    window.api.receive('message-from-main', (message) => {
-      if (message.type === 'project-save-success') {
-        console.log('Project saved successfully:', message.data);
-        // Update project with data from API (including ID)
-        setProject(message.data);
-        localStorage.setItem('project', JSON.stringify(message.data));
-        setApiStatus({ loading: false, error: null });
-      } else if (message.type === 'project-save-error') {
-        console.error('Error saving project:', message.error);
-        setApiStatus({ loading: false, error: message.error });
-      } else if (message.type === 'projects-loaded') {
-        console.log('Projects loaded successfully:', message.data);
-        setProjects(message.data);
-      } else if (message.type === 'projects-error') {
-        console.error('Error loading projects:', message.error);
-      }
-    });
-  }, []);
-
-  // Function to navigate to a different page
-  const navigateTo = (page: PageType) => {
-    setCurrentPage(page);
-  };
-
-  // Function to handle project creation
-  const handleProjectCreate = (name: string, url: string) => {
-    const newProject = { name, url };
-    setProject(newProject);
-    setApiStatus({ loading: true, error: null });
-
-    // Save to localStorage
-    localStorage.setItem('project', JSON.stringify(newProject));
-
-    // Send to main process to save to API
-    window.api.send('save-project', newProject);
-  };
-
-  // Function to handle project selection from list
-  const handleSelectProject = (selectedProject: Project) => {
-    setProject(selectedProject);
-    localStorage.setItem('project', JSON.stringify(selectedProject));
-  };
-
-  // Render the appropriate page based on currentPage state
   return (
-    <>
-      {currentPage === 'project-create' && (
-        <ProjectCreatePage
-          onNavigate={navigateTo}
-          onProjectCreate={handleProjectCreate}
-          apiStatus={apiStatus}
-        />
-      )}
-      {currentPage === 'menu' && (
-        <MenuPage
-          onNavigate={navigateTo}
-          project={project}
-        />
-      )}
-      {currentPage === 'browser' && (
-        <BrowserPage
-          onNavigate={navigateTo}
-          projectUrl={project?.url}
-          projectId={project?.id}
-        />
-      )}
-      {currentPage === 'upload' && (
-        <UploadPage
-          onNavigate={navigateTo}
-          projectId={project?.id}
-          projectName={project?.name}
-        />
-      )}
-      {currentPage === 'project-list' && (
-        <ProjectListPage
-          onNavigate={navigateTo}
-          onSelectProject={handleSelectProject}
-        />
-      )}
-      {currentPage === 'feature-list' && (
-        <FeatureListPage
-          onNavigate={navigateTo}
-          projectId={project?.id}
-          onSelectFeature={(feature) => {
-            setSelectedFeature(feature);
-            navigateTo('feature-detail');
-          }}
-        />
-      )}
-      {currentPage === 'feature-detail' && selectedFeature && (
-        <FeatureDetailPage
-          onNavigate={navigateTo}
-          feature={selectedFeature}
-        />
-      )}
-    </>
+    <AppProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProjectCreatePage />} />
+          <Route path="/menu" element={<MenuPage />} />
+          <Route path="/browser" element={<BrowserPage />} />
+          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/projects" element={<ProjectListPage />} />
+          <Route path="/features" element={<FeatureListPage />} />
+          <Route path="/features/:featureId" element={<FeatureDetailWrapper />} />
+          <Route path="/scenarios/:scenarioId" element={<ScenarioDetailWrapper />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AppProvider>
   );
 };
 

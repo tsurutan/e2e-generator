@@ -17,6 +17,7 @@
     "tailwindcss": "npx tailwindcss -i src/renderer/styles/global.css -o ./src/renderer/styles/global.css --watch"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@radix-ui/react-slot": "^1.2.2",
     "@tailwindcss/postcss": "^4.1.7",
     "@types/node": "^22.15.18",
@@ -30,6 +31,7 @@
     "electron": "^36.2.1",
     "html-webpack-plugin": "^5.6.3",
     "lucide-react": "^0.511.0",
+    "playwright": "^1.52.0",
     "postcss": "^8.5.3",
     "postcss-loader": "^8.1.1",
     "style-loader": "^4.0.0",
@@ -44,6 +46,7 @@
   "dependencies": {
     "axios": "^1.9.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.0"
   }
 }

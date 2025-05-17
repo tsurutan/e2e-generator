@@ -1,32 +1,32 @@
 import React from 'react';
-import { PageType } from '../App';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import { useAppContext } from '../contexts/AppContext';
 
-interface MenuPageProps {
-  onNavigate: (page: PageType) => void;
-  project: { name: string; url: string } | null;
-}
+interface MenuPageProps {}
 
-const MenuPage: React.FC<MenuPageProps> = ({ onNavigate, project }) => {
+const MenuPage: React.FC<MenuPageProps> = () => {
+  const navigate = useNavigate();
+  const { project } = useAppContext();
   // Handle feature list button click
   const handleFeaturesClick = () => {
-    onNavigate('feature-list');
+    navigate('/features');
   };
 
   // Handle upload button click
   const handleUploadClick = () => {
-    onNavigate('upload');
+    navigate('/upload');
   };
 
   // Handle browser button click
   const handleBrowserClick = () => {
-    onNavigate('browser');
+    navigate('/browser');
   };
 
   // Handle project list button click
   const handleProjectListClick = () => {
-    onNavigate('project-list');
+    navigate('/projects');
   };
 
   return (

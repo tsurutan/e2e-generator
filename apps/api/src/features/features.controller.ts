@@ -62,6 +62,17 @@ export class FeaturesController {
   }
 
   /**
+   * 機能IDから機能を取得するエンドポイント
+   * @param id 機能ID
+   * @returns 機能
+   */
+  @Get(':id')
+  async getFeatureById(@Param('id') id: string): Promise<FeatureDto> {
+    this.logger.log(`機能ID ${id} を取得するリクエストを受信しました`);
+    return this.featuresService.getFeatureById(id);
+  }
+
+  /**
    * 機能に関連するシナリオを取得するエンドポイント
    * @param featureId 機能ID
    * @returns シナリオのリスト

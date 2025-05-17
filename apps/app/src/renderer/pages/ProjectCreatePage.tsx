@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-import { PageType } from '../App';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { useAppContext } from '../contexts/AppContext';
 
-interface ProjectCreatePageProps {
-  onNavigate: (page: PageType) => void;
-  onProjectCreate: (projectName: string, projectUrl: string) => void;
-  apiStatus?: {
-    loading: boolean;
-    error: string | null;
-  };
-}
+interface ProjectCreatePageProps {}
 
-const ProjectCreatePage: React.FC<ProjectCreatePageProps> = ({ onNavigate, onProjectCreate, apiStatus }) => {
+const ProjectCreatePage: React.FC<ProjectCreatePageProps> = () => {
+  const navigate = useNavigate();
+  const { handleProjectCreate, apiStatus } = useAppContext();
   const [projectName, setProjectName] = useState('');
   const [projectUrl, setProjectUrl] = useState('https://www.google.com');
   const [nameError, setNameError] = useState('');
@@ -85,8 +81,8 @@ const ProjectCreatePage: React.FC<ProjectCreatePageProps> = ({ onNavigate, onPro
     if (!isValid) return;
 
     // Save project and navigate to menu
-    onProjectCreate(projectName, formatURL(projectUrl));
-    onNavigate('menu');
+    handleProjectCreate(projectName, formatURL(projectUrl));
+    navigate('/menu');
   };
 
   return (

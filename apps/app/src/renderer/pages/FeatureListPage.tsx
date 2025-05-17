@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { PageType, Feature } from '../App';
+import { useNavigate } from 'react-router-dom';
 import ScenarioList from '../components/ScenarioList';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import { useAppContext, Feature } from '../contexts/AppContext';
 
-// Feature interface is now imported from App.tsx
+interface FeatureListPageProps {}
 
-interface FeatureListPageProps {
-  onNavigate: (page: PageType) => void;
-  projectId?: string;
-  onSelectFeature?: (feature: Feature) => void;
-}
-
-const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId, onSelectFeature }) => {
+const FeatureListPage: React.FC<FeatureListPageProps> = () => {
+  const navigate = useNavigate();
+  const { project, setSelectedFeature } = useAppContext();
+  const projectId = project?.id;
   const [features, setFeatures] = useState<Feature[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,12 +57,18 @@ const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId
 
   // メニュー画面に戻る
   const handleBackClick = () => {
-    onNavigate('menu');
+    navigate('/menu');
   };
 
   // 仕様書アップロード画面に遷移
   const handleUploadClick = () => {
-    onNavigate('upload');
+    navigate('/upload');
+  };
+
+  // 機能を選択
+  const handleFeatureClick = (feature: Feature) => {
+    setSelectedFeature(feature);
+    navigate(`/features/${feature.id}`);
   };
 
   // 日付をフォーマット
@@ -125,7 +129,7 @@ const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId
                 <Card
                   key={feature.id}
                   className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary"
-                  onClick={() => onSelectFeature && onSelectFeature(feature)}
+                  onClick={() => handleFeatureClick(feature)}
                 >
                   <CardContent className="p-5">
                     <h3 className="text-lg font-semibold mb-2">{feature.name}</h3>

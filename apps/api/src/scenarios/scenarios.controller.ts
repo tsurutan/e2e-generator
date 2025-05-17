@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Logger, Query } from '@nestjs/common';
 import { ScenariosService } from './scenarios.service';
 import {
   ScenarioDto,
@@ -6,6 +6,8 @@ import {
   SaveScenarioDto,
   SaveScenariosDto,
   ExtractScenariosDto,
+  GenerateCodeDto,
+  CodeResponseDto,
 } from './dto';
 
 @Controller('scenarios')
@@ -83,5 +85,20 @@ export class ScenariosController {
   async getScenarioById(@Param('id') id: string): Promise<ScenarioDto> {
     this.logger.log(`シナリオID ${id} を取得するリクエストを受信しました`);
     return this.scenariosService.getScenarioById(id);
+  }
+
+  /**
+   * シナリオからPlaywrightコードを生成するエンドポイント
+   * @param id シナリオID
+   * @param projectUrl プロジェクトのURL（オプション）
+   * @returns 生成されたコード
+   */
+  @Get(':id/generate-code')
+  async generateCode(
+    @Param('id') id: string,
+    @Query('projectUrl') projectUrl?: string,
+  ): Promise<CodeResponseDto> {
+    this.logger.log(`シナリオID ${id} のPlaywrightコードを生成するリクエストを受信しました`);
+    return this.scenariosService.generateCode(id, projectUrl);
   }
 }

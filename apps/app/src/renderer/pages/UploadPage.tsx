@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PageType } from '../App';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { useAppContext } from '../contexts/AppContext';
 
-interface UploadPageProps {
-  onNavigate: (page: PageType) => void;
-  projectId?: string;
-  projectName?: string;
-}
+interface UploadPageProps {}
 
 
 
@@ -24,7 +21,11 @@ interface FeatureList {
   features: Feature[];
 }
 
-const UploadPage: React.FC<UploadPageProps> = ({ onNavigate, projectId, projectName }) => {
+const UploadPage: React.FC<UploadPageProps> = () => {
+  const navigate = useNavigate();
+  const { project } = useAppContext();
+  const projectId = project?.id;
+  const projectName = project?.name;
   const [specificationText, setSpecificationText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [features, setFeatures] = useState<Feature[]>([]);
@@ -168,7 +169,7 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate, projectId, projectN
 
   // Handle back button click
   const handleBackClick = () => {
-    onNavigate('menu');
+    navigate('/menu');
   };
 
 
@@ -291,7 +292,7 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate, projectId, projectN
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => onNavigate('feature-list')}
+                  onClick={() => navigate('/features')}
                 >
                   機能一覧を表示する
                 </Button>

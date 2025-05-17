@@ -234,4 +234,28 @@ export class FeaturesService {
       throw error;
     }
   }
+
+  /**
+   * 機能IDから機能を取得する
+   * @param id 機能ID
+   * @returns 機能
+   */
+  async getFeatureById(id: string): Promise<FeatureDto> {
+    try {
+      this.logger.log(`機能ID ${id} を取得します`);
+
+      const feature = await this.prisma.feature.findUnique({
+        where: { id },
+      });
+
+      if (!feature) {
+        throw new NotFoundException(`機能ID ${id} が見つかりません`);
+      }
+
+      return feature;
+    } catch (error) {
+      this.logger.error('機能取得中にエラーが発生しました', error.stack);
+      throw error;
+    }
+  }
 }

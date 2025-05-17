@@ -1,15 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PageType } from '../App';
+import { useNavigate } from 'react-router-dom';
 import LabelPopup from '../components/LabelPopup';
 import LabelListPanel from '../components/LabelListPanel';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { useAppContext } from '../contexts/AppContext';
 
-interface BrowserPageProps {
-  onNavigate: (page: PageType) => void;
-  projectUrl?: string;
-  projectId?: string;
-}
+interface BrowserPageProps {}
 
 interface LogEntry {
   id: number;
@@ -23,7 +20,11 @@ interface ElementInfo {
   text?: string;
 }
 
-const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl, projectId }) => {
+const BrowserPage: React.FC<BrowserPageProps> = () => {
+  const navigate = useNavigate();
+  const { project } = useAppContext();
+  const projectUrl = project?.url;
+  const projectId = project?.id;
   const [url, setUrl] = useState(projectUrl || 'https://www.google.com');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logIdCounter, setLogIdCounter] = useState(0);
@@ -287,7 +288,7 @@ const BrowserPage: React.FC<BrowserPageProps> = ({ onNavigate, projectUrl, proje
 
   // Handle back button click
   const handleBackClick = () => {
-    onNavigate('menu');
+    navigate('/menu');
   };
 
   // ラベル一覧を更新する関数

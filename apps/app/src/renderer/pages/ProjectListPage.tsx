@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PageType } from '../App';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import { useAppContext } from '../contexts/AppContext';
 
 interface Project {
   id: string;
@@ -12,12 +13,11 @@ interface Project {
   updatedAt: string;
 }
 
-interface ProjectListPageProps {
-  onNavigate: (page: PageType) => void;
-  onSelectProject?: (project: Project) => void;
-}
+interface ProjectListPageProps {}
 
-const ProjectListPage: React.FC<ProjectListPageProps> = ({ onNavigate, onSelectProject }) => {
+const ProjectListPage: React.FC<ProjectListPageProps> = () => {
+  const navigate = useNavigate();
+  const { handleSelectProject } = useAppContext();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,27 +52,31 @@ const ProjectListPage: React.FC<ProjectListPageProps> = ({ onNavigate, onSelectP
 
   // プロジェクトカードをクリックしたときの処理
   const handleProjectClick = (project: Project) => {
-    if (onSelectProject) {
-      onSelectProject(project);
-    }
+    handleSelectProject(project);
     // メニュー画面に戻る
-    onNavigate('menu');
+    navigate('/menu');
   };
 
   // 新規プロジェクト作成画面に遷移
   const handleCreateProject = () => {
-    onNavigate('project-create');
+    navigate('/');
   };
 
   // メニュー画面に戻る
   const handleBackClick = () => {
-    onNavigate('menu');
+    navigate('/menu');
   };
 
   // 日付をフォーマット
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
+  };
+
+  // プロジェクトを選択
+  const handleProjectSelect = (project: Project) => {
+    handleSelectProject(project);
+    navigate('/menu');
   };
 
   return (
@@ -109,7 +113,7 @@ const ProjectListPage: React.FC<ProjectListPageProps> = ({ onNavigate, onSelectP
               <Card
                 key={project.id}
                 className="hover:shadow-lg transition-all cursor-pointer"
-                onClick={() => handleProjectClick(project)}
+                onClick={() => handleProjectSelect(project)}
               >
                 <CardContent className="p-5">
                   <h3 className="text-lg font-semibold mb-2">{project.name}</h3>

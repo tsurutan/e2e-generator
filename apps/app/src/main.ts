@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import axios from 'axios';
+import { runScenario, runGeneratedCode } from './utils/playwright-runner';
+import { generatePlaywrightCode } from './utils/playwright-code-generator';
 
 // Keep a global reference of the window object to prevent it from being garbage collected
 let mainWindow: BrowserWindow | null = null;
@@ -315,6 +317,38 @@ ipcMain.on('get-labels-by-url', async (event, data) => {
   }
 });
 
+// Handle get feature by ID
+ipcMain.on('get-feature', async (event, data) => {
+  console.log('Get feature requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/features/${data.featureId}`;
+
+    // APIから機能を取得
+    const response = await axios.get(apiUrl);
+    console.log('Feature loaded from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'feature-loaded',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to load feature from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'feature-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
 // Handle get scenarios by feature ID
 ipcMain.on('get-scenarios', async (event, data) => {
   console.log('Get scenarios requested:', data);
@@ -346,6 +380,85 @@ ipcMain.on('get-scenarios', async (event, data) => {
       event.sender.send('message-from-main', {
         type: 'scenarios-error',
         error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle run scenario with Playwright
+ipcMain.on('run-scenario', async (event, data) => {
+  console.log('Run scenario requested:', data);
+
+  try {
+    let logs: string[];
+
+    // 生成されたコードがあればそれを使用し、なければフォールバックを使用
+    if (data.generatedCode) {
+      console.log('Using generated code for execution');
+      logs = await runGeneratedCode(data.generatedCode, data.id);
+    } else {
+      console.log('No generated code available, using fallback execution');
+      logs = await runScenario(
+        data.url,
+        data.given,
+        data.when,
+        data.then
+      );
+    }
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'scenario-run-success',
+        data: {
+          logs,
+          scenarioId: data.id
+        }
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to run scenario with Playwright:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'scenario-run-error',
+        error: error.message || 'Unknown error',
+        scenarioId: data.id
+      });
+    }
+  }
+});
+
+// Handle generate Playwright code
+ipcMain.on('generate-code', async (event, data) => {
+  console.log('Generate code requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/scenarios/${data.id}/generate-code`;
+    const queryParams = data.projectUrl ? `?projectUrl=${encodeURIComponent(data.projectUrl)}` : '';
+
+    // APIからコードを生成
+    const response = await axios.get(`${apiUrl}${queryParams}`);
+    console.log('Code generated from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'code-generated',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to generate code from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'code-generation-error',
+        error: error.message || 'Unknown error',
+        scenarioId: data.id
       });
     }
   }
