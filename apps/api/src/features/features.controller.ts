@@ -1,15 +1,20 @@
 import { Controller, Post, Get, Body, Param, Logger } from '@nestjs/common';
 import { FeaturesService } from './features.service';
+import { ScenariosService } from '../scenarios/scenarios.service';
 import { UploadSpecificationDto } from './dto/upload-specification.dto';
 import { FeatureListDto } from './dto/feature-list.dto';
 import { FeatureDto } from './dto/feature.dto';
 import { SaveFeaturesDto } from './dto/save-features.dto';
+import { ScenarioDto } from '../scenarios/dto';
 
 @Controller('features')
 export class FeaturesController {
   private readonly logger = new Logger(FeaturesController.name);
 
-  constructor(private readonly featuresService: FeaturesService) {}
+  constructor(
+    private readonly featuresService: FeaturesService,
+    private readonly scenariosService: ScenariosService,
+  ) {}
 
   /**
    * 仕様書から機能一覧を抽出するエンドポイント
@@ -54,5 +59,18 @@ export class FeaturesController {
   async getAllFeatures(): Promise<FeatureDto[]> {
     this.logger.log('すべての機能を取得するリクエストを受信しました');
     return this.featuresService.getAllFeatures();
+  }
+
+  /**
+   * 機能に関連するシナリオを取得するエンドポイント
+   * @param featureId 機能ID
+   * @returns シナリオのリスト
+   */
+  @Get(':featureId/scenarios')
+  async getScenariosByFeatureId(
+    @Param('featureId') featureId: string,
+  ): Promise<ScenarioDto[]> {
+    this.logger.log(`機能ID ${featureId} のシナリオを取得するリクエストを受信しました`);
+    return this.scenariosService.getScenariosByFeatureId(featureId);
   }
 }

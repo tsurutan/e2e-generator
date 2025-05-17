@@ -16,4 +16,10 @@ export class UploadSpecificationDto {
    * @example "text/plain"
    */
   fileType?: string;
+
+  /**
+   * 関連付けるプロジェクトのID（オプション）
+   * @example "123e4567-e89b-12d3-a456-426614174000"
+   */
+  projectId?: string;
 }

@@ -128,6 +128,8 @@ const App: React.FC = () => {
       {currentPage === 'upload' && (
         <UploadPage
           onNavigate={navigateTo}
+          projectId={project?.id}
+          projectName={project?.name}
         />
       )}
       {currentPage === 'project-list' && (

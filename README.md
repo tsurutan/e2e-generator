@@ -15,7 +15,9 @@
 - イベントログのリアルタイム表示
 - 仕様書アップロード機能でテキスト仕様書から機能一覧を自動抽出
 - OpenAI GPT-4oを活用した機能名と説明の自動生成
-- 抽出された機能一覧の保存と表示
+- 抽出された機能一覧のプロジェクトへの関連付け、保存、表示
+- Gherkin記法に基づいたシナリオの自動生成
+- 機能ごとのシナリオ管理と表示
 
 ## 技術スタック
 
@@ -43,6 +45,7 @@ e2e-app/
 │   │   │   ├── hello/       # Helloモジュール
 │   │   │   ├── projects/    # プロジェクト管理モジュール
 │   │   │   ├── features/    # 機能管理モジュール
+│   │   │   ├── scenarios/   # シナリオ管理モジュール
 │   │   │   ├── prisma/      # Prisma ORM関連
 │   │   │   ├── app.module.ts # メインモジュール
 │   │   │   ├── app.controller.ts # メインコントローラー
@@ -100,7 +103,7 @@ e2e-app/
 - **プロジェクト作成画面** (ProjectCreatePage.tsx): プロジェクト名とURLを設定
 - **メニュー画面** (MenuPage.tsx): 各機能へのアクセスを提供
 - **ブラウザ機能** (BrowserPage.tsx): Webサイト表示とイベント記録
-- **仕様書アップロード機能** (UploadPage.tsx): 仕様書から機能抽出
+- **仕様書アップロード機能** (UploadPage.tsx): プロジェクト選択と仕様書から機能抽出
 - **機能一覧画面** (FeatureListPage.tsx): 機能一覧の表示と管理
 
 ## セキュリティ対策
@@ -248,6 +251,13 @@ GET /api/projects/:id/features - 指定したプロジェクトの機能一覧�
 # 機能関連のエンドポイント
 POST /api/features/extract - 仕様書から機能を抽出
 POST /api/features/save - 機能を保存
+GET /api/features/:featureId/scenarios - 指定した機能のシナリオ一覧を取得
+
+# シナリオ関連のエンドポイント
+POST /api/scenarios/extract - 仕様書からシナリオを抽出
+POST /api/scenarios/save - シナリオを保存
+POST /api/scenarios/save-multiple - 複数のシナリオを保存
+GET /api/scenarios/feature/:featureId - 指定した機能のシナリオ一覧を取得
 ```
 
 ## 今後の開発予定

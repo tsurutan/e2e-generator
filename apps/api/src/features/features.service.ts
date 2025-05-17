@@ -4,6 +4,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
+import { ScenariosService } from '../scenarios/scenarios.service';
 import { UploadSpecificationDto } from './dto/upload-specification.dto';
 import { FeatureListDto } from './dto/feature-list.dto';
 import { FeatureDto } from './dto/feature.dto';
@@ -15,8 +16,9 @@ export class FeaturesService {
   private readonly llm: ChatOpenAI;
 
   constructor(
-    private configService: ConfigService,
-    private prisma: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+    private readonly scenariosService: ScenariosService,
   ) {
     // OpenAI APIの初期化
     this.llm = new ChatOpenAI({
@@ -36,6 +38,21 @@ export class FeaturesService {
   ): Promise<FeatureListDto> {
     try {
       this.logger.log('仕様書から機能一覧を抽出します');
+
+      // projectIdが指定されている場合は、プロジェクトが存在するか確認
+      if (uploadSpecificationDto.projectId) {
+        const project = await this.prisma.project.findUnique({
+          where: { id: uploadSpecificationDto.projectId },
+        });
+
+        if (!project) {
+          throw new NotFoundException(`プロジェクトID ${uploadSpecificationDto.projectId} が見つかりません`);
+        }
+
+        this.logger.log(`プロジェクトID ${uploadSpecificationDto.projectId} の機能を抽出します`);
+      } else {
+        this.logger.warn('プロジェクトIDが指定されていません');
+      }
 
       // 機能スキーマの定義
       const featureSchema = z.object({
@@ -82,6 +99,7 @@ export class FeaturesService {
       const features: FeatureDto[] = result.features.map((feature: any) => ({
         name: feature.name || '名称なし', // nameがない場合はデフォルト値を設定
         description: feature.description || '説明なし', // descriptionがない場合はデフォルト値を設定
+        projectId: uploadSpecificationDto.projectId, // プロジェクトIDを設定
       }));
 
       return {
@@ -102,6 +120,20 @@ export class FeaturesService {
     try {
       this.logger.log(`${saveFeaturesDto.features.length}個の機能を保存します`);
 
+      // projectIdが必要
+      if (!saveFeaturesDto.projectId) {
+        throw new Error('プロジェクトIDが指定されていません');
+      }
+
+      // プロジェクトが存在するか確認
+      const project = await this.prisma.project.findUnique({
+        where: { id: saveFeaturesDto.projectId },
+      });
+
+      if (!project) {
+        throw new NotFoundException(`プロジェクトID ${saveFeaturesDto.projectId} が見つかりません`);
+      }
+
       const savedFeatures = [];
 
       // トランザクションを使用して、全ての機能を保存
@@ -114,6 +146,30 @@ export class FeaturesService {
           },
         });
         savedFeatures.push(savedFeature);
+
+        // 機能の説明からシナリオを自動生成して保存
+        try {
+          const extractResult = await this.scenariosService.extractScenarios({
+            text: feature.description,
+            featureId: savedFeature.id,
+          });
+
+          if (extractResult.scenarios.length > 0) {
+            await this.scenariosService.saveScenarios({
+              scenarios: extractResult.scenarios,
+              featureId: savedFeature.id,
+            });
+            this.logger.log(
+              `機能ID ${savedFeature.id} に対して ${extractResult.scenarios.length} 個のシナリオを自動生成しました`,
+            );
+          }
+        } catch (scenarioError) {
+          this.logger.error(
+            `機能ID ${savedFeature.id} のシナリオ自動生成中にエラーが発生しました`,
+            scenarioError.stack,
+          );
+          // シナリオ生成エラーは無視して処理を続行
+        }
       }
 
       this.logger.log(`${savedFeatures.length}個の機能を保存しました`);

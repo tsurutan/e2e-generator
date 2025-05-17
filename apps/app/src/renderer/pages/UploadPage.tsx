@@ -4,7 +4,11 @@ import '../styles/UploadPage.css';
 
 interface UploadPageProps {
   onNavigate: (page: PageType) => void;
+  projectId?: string;
+  projectName?: string;
 }
+
+
 
 // 機能インターフェース
 interface Feature {
@@ -17,7 +21,7 @@ interface FeatureList {
   features: Feature[];
 }
 
-const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
+const UploadPage: React.FC<UploadPageProps> = ({ onNavigate, projectId, projectName }) => {
   const [specificationText, setSpecificationText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [features, setFeatures] = useState<Feature[]>([]);
@@ -39,6 +43,15 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
       setSelectedFile(null);
     }
   };
+
+  // プロジェクトIDがない場合はエラーを表示
+  useEffect(() => {
+    if (!projectId) {
+      setError('プロジェクトが選択されていません。メニューからプロジェクトを選択してください。');
+    } else {
+      setError(null);
+    }
+  }, [projectId]);
 
   // メインプロセスからのメッセージを受信
   useEffect(() => {
@@ -87,13 +100,18 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
       return;
     }
 
+    if (!projectId) {
+      setError('プロジェクトが選択されていません。メニューからプロジェクトを選択してください。');
+      return;
+    }
+
     // 送信前に状態をリセット
     setFeatures([]);
     setLoading(true);
     setError(null);
 
     // Prepare data for submission
-    const formData: { text?: string, fileName?: string, fileType?: string } = {};
+    const formData: { text?: string, fileName?: string, fileType?: string, projectId?: string } = {};
 
     if (specificationText) {
       formData.text = specificationText;
@@ -107,6 +125,9 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
       console.log(`File selected: ${selectedFile.name} (${selectedFile.type})`);
     }
 
+    // プロジェクトIDを追加
+    formData.projectId = projectId;
+
     // Send data to main process
     window.api.send('specification-upload', formData);
   };
@@ -118,13 +139,27 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
       return;
     }
 
+    if (!projectId) {
+      setError('プロジェクトが選択されていません。メニューからプロジェクトを選択してください。');
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSaveSuccess(false);
 
+    // 機能にプロジェクトIDを追加する
+    const featuresWithProjectId = features.map(feature => ({
+      ...feature,
+      projectId: projectId
+    }));
+
+    console.log('Saving features with projectId:', featuresWithProjectId);
+
     // メインプロセスに機能保存リクエストを送信
     window.api.send('save-features', {
-      features: features
+      features: featuresWithProjectId,
+      projectId: projectId
     });
   };
 
@@ -132,6 +167,8 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
   const handleBackClick = () => {
     onNavigate('menu');
   };
+
+
 
   return (
     <div className="upload-page">
@@ -142,6 +179,13 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
       <main className="content">
         <div className="upload-container">
           <form id="upload-form" onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>プロジェクト:</label>
+              <div className="project-info">
+                {projectName ? projectName : 'プロジェクトが選択されていません'}
+              </div>
+            </div>
+
             <div className="form-group">
               <label htmlFor="specification-text">仕様書のテキスト:</label>
               <textarea
@@ -183,6 +227,7 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
               <button
                 type="submit"
                 className="button submit-button"
+                disabled={!projectId}
               >
                 送信
               </button>
@@ -219,6 +264,7 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
                 type="button"
                 className="button save-button"
                 onClick={() => handleSaveFeatures()}
+                disabled={!projectId || saving}
               >
                 機能を保存する
               </button>
@@ -230,6 +276,11 @@ const UploadPage: React.FC<UploadPageProps> = ({ onNavigate }) => {
                 機能一覧を表示する
               </button>
             </div>
+            {saveSuccess && (
+              <div className="success-message">
+                <p>機能が正常に保存されました。</p>
+              </div>
+            )}
           </div>
         )}
       </main>

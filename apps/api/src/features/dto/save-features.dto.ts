@@ -7,7 +7,7 @@ export class SaveFeaturesDto {
   features: FeatureDto[];
 
   /**
-   * 関連付けるプロジェクトのID（オプション）
+   * 関連付けるプロジェクトのID
    */
-  projectId?: string;
+  projectId: string;
 }

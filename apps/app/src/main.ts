@@ -314,3 +314,39 @@ ipcMain.on('get-labels-by-url', async (event, data) => {
     }
   }
 });
+
+// Handle get scenarios by feature ID
+ipcMain.on('get-scenarios', async (event, data) => {
+  console.log('Get scenarios requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/features/${data.featureId}/scenarios`;
+
+    // APIからシナリオ一覧を取得
+    const response = await axios.get(apiUrl);
+    console.log('Scenarios loaded from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      // レスポンスデータが配列か確認
+      const scenariosData = Array.isArray(response.data) ? response.data : [];
+      console.log('Sending scenarios to renderer:', scenariosData);
+
+      event.sender.send('message-from-main', {
+        type: 'scenarios-loaded',
+        data: scenariosData
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to load scenarios from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'scenarios-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});

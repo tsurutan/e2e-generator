@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { FeaturesModule } from './features/features.module';
 import { LabelsModule } from './labels/labels.module';
+import { ScenariosModule } from './scenarios/scenarios.module';
 import * as path from 'path';
 
 @Module({
@@ -22,7 +23,8 @@ import * as path from 'path';
     HelloModule,
     ProjectsModule,
     FeaturesModule,
-    LabelsModule
+    LabelsModule,
+    ScenariosModule
   ],
   controllers: [AppController],
   providers: [AppService],

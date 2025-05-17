@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageType } from '../App';
+import ScenarioList from '../components/ScenarioList';
 import '../styles/FeatureListPage.css';
 
 // 機能インターフェース
@@ -131,6 +132,7 @@ const FeatureListPage: React.FC<FeatureListPageProps> = ({ onNavigate, projectId
                     作成日時: {formatDate(feature.createdAt)}
                   </p>
                 </div>
+                <ScenarioList featureId={feature.id} />
               </div>
             ))}
           </div>

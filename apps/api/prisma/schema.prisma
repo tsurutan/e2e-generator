@@ -24,13 +24,14 @@ model Project {
 }
 
 model Feature {
-  id          String   @id @default(uuid())
-  name        String   @db.VarChar(100)
+  id          String     @id @default(uuid())
+  name        String     @db.VarChar(100)
   description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   projectId   String?
-  project     Project? @relation(fields: [projectId], references: [id])
+  project     Project?   @relation(fields: [projectId], references: [id])
+  scenarios   Scenario[]
 
   @@map("features")
 }
@@ -50,4 +51,19 @@ model Label {
   updatedAt   DateTime @updatedAt
 
   @@map("labels")
+}
+
+model Scenario {
+  id          String   @id @default(uuid())
+  title       String   @db.VarChar(200)
+  description String?
+  given       String
+  when        String
+  then        String
+  featureId   String
+  feature     Feature  @relation(fields: [featureId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("scenarios")
 }
