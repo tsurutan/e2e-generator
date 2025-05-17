@@ -339,8 +339,8 @@ export class ScenariosService {
           })
         : [];
 
-      // Playwrightコードを生成
-      const code = generatePlaywrightCode(scenario, labels, url);
+      // Playwrightコードを生成（非同期関数に変更）
+      const code = await generatePlaywrightCode(scenario, labels, url);
 
       this.logger.log(`シナリオID ${id} のPlaywrightコードを生成しました`);
 
