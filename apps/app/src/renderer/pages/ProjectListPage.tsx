@@ -11,6 +11,7 @@ interface Project {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  featureCount?: number;
 }
 
 interface ProjectListPageProps {}
@@ -59,7 +60,7 @@ const ProjectListPage: React.FC<ProjectListPageProps> = () => {
 
   // 新規プロジェクト作成画面に遷移
   const handleCreateProject = () => {
-    navigate('/');
+    navigate('/create-project');
   };
 
   // メニュー画面に戻る
@@ -81,21 +82,23 @@ const ProjectListPage: React.FC<ProjectListPageProps> = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
-        <h1 className="text-2xl font-bold m-0">プロジェクト一覧</h1>
+      <header className="bg-primary text-primary-foreground p-5 shadow-md">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold m-0">プロジェクト一覧</h1>
+          <Button onClick={handleCreateProject} className="bg-white text-primary hover:bg-gray-100">
+            + 新規プロジェクト
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 p-5 overflow-auto">
-        <div className="flex justify-between mb-5">
+        <div className="mb-5">
           <Button
             variant="outline"
             onClick={handleBackClick}
             className="flex items-center gap-1"
           >
             <span className="mr-1">←</span> メニューに戻る
-          </Button>
-          <Button onClick={handleCreateProject}>
-            + 新規プロジェクト
           </Button>
         </div>
 
@@ -116,7 +119,12 @@ const ProjectListPage: React.FC<ProjectListPageProps> = () => {
                 onClick={() => handleProjectSelect(project)}
               >
                 <CardContent className="p-5">
-                  <h3 className="text-lg font-semibold mb-2">{project.name}</h3>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-semibold">{project.name}</h3>
+                    <div className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+                      機能数: {project.featureCount !== undefined ? project.featureCount : 0}
+                    </div>
+                  </div>
                   <p className="text-primary break-all text-sm mb-2">{project.url}</p>
                   {project.description && <p className="text-muted-foreground text-sm mb-3">{project.description}</p>}
                   <div className="text-xs text-muted-foreground space-y-1 border-t pt-2 mt-2">

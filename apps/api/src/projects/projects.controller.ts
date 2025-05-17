@@ -5,6 +5,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { FeaturesService } from '../features/features.service';
 import { FeatureDto } from '../features/dto/feature.dto';
+import { ProjectWithFeatureCount } from './dto/project-with-feature-count.dto';
 
 @Controller('projects')
 export class ProjectsController {
@@ -14,7 +15,7 @@ export class ProjectsController {
   ) {}
 
   @Get()
-  findAll(): Promise<Project[]> {
+  findAll(): Promise<ProjectWithFeatureCount[]> {
     return this.projectsService.findAll();
   }
 

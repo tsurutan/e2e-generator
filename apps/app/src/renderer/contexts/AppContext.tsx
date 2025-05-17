@@ -7,6 +7,7 @@ export interface Project {
   url: string;
   createdAt?: string;
   updatedAt?: string;
+  featureCount?: number;
 }
 
 // Feature interface

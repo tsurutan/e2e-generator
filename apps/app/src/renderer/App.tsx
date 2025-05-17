@@ -38,7 +38,8 @@ const App: React.FC = () => {
     <AppProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<ProjectCreatePage />} />
+          <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/create-project" element={<ProjectCreatePage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/browser" element={<BrowserPage />} />
           <Route path="/upload" element={<UploadPage />} />
@@ -46,7 +47,7 @@ const App: React.FC = () => {
           <Route path="/features" element={<FeatureListPage />} />
           <Route path="/features/:featureId" element={<FeatureDetailWrapper />} />
           <Route path="/scenarios/:scenarioId" element={<ScenarioDetailWrapper />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/projects" replace />} />
         </Routes>
       </Router>
     </AppProvider>

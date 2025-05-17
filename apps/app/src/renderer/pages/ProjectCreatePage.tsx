@@ -80,15 +80,17 @@ const ProjectCreatePage: React.FC<ProjectCreatePageProps> = () => {
 
     if (!isValid) return;
 
-    // Save project and navigate to menu
+    // Save project and navigate to projects list
     handleProjectCreate(projectName, formatURL(projectUrl));
-    navigate('/menu');
+    navigate('/projects');
   };
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
-        <h1 className="text-2xl font-bold m-0">プロジェクト作成</h1>
+      <header className="bg-primary text-primary-foreground p-5 shadow-md">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold m-0">プロジェクト作成</h1>
+        </div>
       </header>
 
       <main className="flex-1 p-6 flex justify-center items-start">
@@ -122,7 +124,14 @@ const ProjectCreatePage: React.FC<ProjectCreatePageProps> = () => {
                 {urlError && <p className="text-sm text-destructive mt-1">{urlError}</p>}
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-between pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/projects')}
+                >
+                  キャンセル
+                </Button>
                 <Button
                   type="submit"
                   disabled={apiStatus?.loading}

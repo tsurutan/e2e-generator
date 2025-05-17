@@ -3,13 +3,31 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Project, Prisma } from '@prisma/client';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ProjectWithFeatureCount } from './dto/project-with-feature-count.dto';
 
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(): Promise<Project[]> {
-    return this.prisma.project.findMany();
+  async findAll(): Promise<ProjectWithFeatureCount[]> {
+    // プロジェクト一覧を取得
+    const projects = await this.prisma.project.findMany();
+
+    // 各プロジェクトの機能数を取得
+    const projectsWithFeatureCount = await Promise.all(
+      projects.map(async (project) => {
+        const featureCount = await this.prisma.feature.count({
+          where: { projectId: project.id },
+        });
+
+        return {
+          ...project,
+          featureCount,
+        };
+      })
+    );
+
+    return projectsWithFeatureCount;
   }
 
   async findOne(id: string): Promise<Project> {
