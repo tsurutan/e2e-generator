@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LabelPopup from '../components/LabelPopup';
 import LabelListPanel from '../components/LabelListPanel';
+import LabelReviewPanel from '../components/LabelReviewPanel';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useAppContext } from '../contexts/AppContext';
@@ -39,6 +40,11 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
   const [labelError, setLabelError] = useState<string | null>(null);
   const [currentUrl, setCurrentUrl] = useState('');
   const [showLabelList, setShowLabelList] = useState(false);
+  const [generatedLabels, setGeneratedLabels] = useState<any[]>([]);
+  const [showLabelReviewPanel, setShowLabelReviewPanel] = useState(false);
+  const [isGeneratingLabels, setIsGeneratingLabels] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isSavingMultipleLabels, setIsSavingMultipleLabels] = useState(false);
   const webviewRef = useRef<Electron.WebviewTag | null>(null);
 
   // Update URL when projectUrl changes
@@ -54,6 +60,9 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
     webviewElement.src = url;
     webviewElement.setAttribute('allowpopups', 'true');
     webviewElement.className = 'webview';
+    // 高さを100%に設定
+    webviewElement.style.height = '100%';
+    webviewElement.style.width = '100%';
 
     const webviewContainer = document.getElementById('webview-container');
     if (webviewContainer) {
@@ -105,6 +114,29 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         setLoadingLabels(false);
         setLabelError(message.error);
         addLog('error', `ラベル読み込みエラー: ${message.error}`);
+      } else if (message.type === 'labels-auto-generated') {
+        console.log('Labels auto-generated:', message.data);
+        setGeneratedLabels(message.data);
+        setIsGeneratingLabels(false);
+        setGenerationError(null);
+        setShowLabelReviewPanel(true);
+        addLog('success', `${message.data.length}個のラベルを自動生成しました`);
+      } else if (message.type === 'labels-auto-generation-error') {
+        console.error('Error auto-generating labels:', message.error);
+        setGeneratedLabels([]);
+        setIsGeneratingLabels(false);
+        setGenerationError(message.error);
+        addLog('error', `ラベル自動生成エラー: ${message.error}`);
+      } else if (message.type === 'multiple-labels-saved') {
+        console.log('Multiple labels saved:', message.data);
+        setIsSavingMultipleLabels(false);
+        setShowLabelReviewPanel(false);
+        refreshLabels(); // ラベル一覧を更新
+        addLog('success', `${message.data.length}個のラベルを保存しました`);
+      } else if (message.type === 'multiple-labels-save-error') {
+        console.error('Error saving multiple labels:', message.error);
+        setIsSavingMultipleLabels(false);
+        addLog('error', `複数ラベル保存エラー: ${message.error}`);
       }
     };
 
@@ -379,6 +411,119 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
       });
   };
 
+  // Handle auto-generate labels button click
+  const handleAutoGenerateLabelsClick = () => {
+    if (!projectId) {
+      addLog('error', 'プロジェクトIDが設定されていません。プロジェクトを作成してください。');
+      return;
+    }
+
+    if (!webviewRef.current) {
+      addLog('error', 'Webviewが初期化されていません。');
+      return;
+    }
+
+    setIsGeneratingLabels(true);
+    setGenerationError(null);
+
+    // Get current URL and HTML content
+    const currentUrl = webviewRef.current.getURL();
+    let queryParams = null;
+
+    // Extract query parameters if present
+    try {
+      const urlObj = new URL(currentUrl);
+      if (urlObj.search) {
+        queryParams = urlObj.search; // Includes the '?' character
+      }
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+    }
+
+    // Get only body content from webview
+    webviewRef.current.executeJavaScript(`
+      // bodyタグの中身だけを取得する関数
+      function getBodyContent() {
+        // body要素のクローンを作成
+        const bodyClone = document.body.cloneNode(true);
+
+        // スクリプト、スタイル、コメント、大きな画像を削除
+        const scripts = bodyClone.querySelectorAll('script');
+        scripts.forEach(script => script.remove());
+
+        const styles = bodyClone.querySelectorAll('style');
+        styles.forEach(style => style.remove());
+
+        // 大きな画像やデータのURIを削除
+        const images = bodyClone.querySelectorAll('img');
+        images.forEach(img => {
+          if (img.src && img.src.startsWith('data:')) {
+            img.setAttribute('src', '');
+          }
+        });
+
+        // コメントノードを削除
+        const walker = document.createTreeWalker(
+          bodyClone,
+          NodeFilter.SHOW_COMMENT,
+          null,
+          false
+        );
+        const commentsToRemove = [];
+        let currentNode;
+        while (currentNode = walker.nextNode()) {
+          commentsToRemove.push(currentNode);
+        }
+        commentsToRemove.forEach(comment => comment.parentNode.removeChild(comment));
+
+        // ページのタイトルを取得
+        const pageTitle = document.title || '';
+
+        // ページの基本情報とbodyの内容を返す
+        return {
+          title: pageTitle,
+          bodyContent: bodyClone.innerHTML
+        };
+      }
+
+      getBodyContent();
+    `).then(result => {
+      // Send HTML content to API for label generation
+      addLog('info', 'HTMLコンテンツからラベルを自動生成中...');
+
+      // ページタイトルとbodyの内容を取得
+      const { title, bodyContent } = result;
+
+      // シンプルなHTMLを作成
+      const simplifiedHtml = `<html><head><title>${title}</title></head><body>${bodyContent}</body></html>`;
+
+      window.api.send('auto-generate-labels', {
+        htmlContent: simplifiedHtml,
+        url: currentUrl,
+        queryParams,
+        projectId
+      });
+    }).catch(error => {
+      setIsGeneratingLabels(false);
+      setGenerationError(error.message);
+      addLog('error', `HTML取得エラー: ${error.message}`);
+    });
+  };
+
+  // Handle save selected labels
+  const handleSaveSelectedLabels = (selectedLabels: any[]) => {
+    if (!projectId || selectedLabels.length === 0) {
+      return;
+    }
+
+    setIsSavingMultipleLabels(true);
+    addLog('info', `${selectedLabels.length}個のラベルを保存中...`);
+
+    window.api.send('save-multiple-labels', {
+      labels: selectedLabels
+    });
+  };
+
   // Handle label register button click
   const handleLabelRegisterClick = () => {
     const newState = !isLabelRegisterActive;
@@ -467,17 +612,27 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
             Load
           </Button>
         </div>
-        <Button
-          variant={isLabelRegisterActive ? "destructive" : "default"}
-          onClick={handleLabelRegisterClick}
-          size="sm"
-        >
-          ラベル登録
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleAutoGenerateLabelsClick}
+            size="sm"
+            disabled={isGeneratingLabels}
+          >
+            {isGeneratingLabels ? 'ラベル生成中...' : 'ラベル自動生成'}
+          </Button>
+          <Button
+            variant={isLabelRegisterActive ? "destructive" : "default"}
+            onClick={handleLabelRegisterClick}
+            size="sm"
+          >
+            ラベル登録
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div id="webview-container" className="flex-[2] relative">
+      <div className="flex flex-1 overflow-hidden h-[calc(100vh-60px)]">
+        <div id="webview-container" className="flex-[2] relative h-full">
           {/* Webview will be created dynamically */}
         </div>
 
@@ -550,7 +705,17 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         />
       )}
 
-
+      {/* Label Review Panel */}
+      {showLabelReviewPanel && generatedLabels.length > 0 && (
+        <LabelReviewPanel
+          labels={generatedLabels}
+          onSave={handleSaveSelectedLabels}
+          onCancel={() => {
+            setShowLabelReviewPanel(false);
+            setGeneratedLabels([]);
+          }}
+        />
+      )}
     </div>
   );
 };

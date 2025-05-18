@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld(
   'api', {
     send: (channel: string, data: any) => {
       // whitelist channels
-      const validChannels: string[] = ['message-from-renderer', 'open-browser', 'open-upload', 'specification-upload', 'go-back-to-menu', 'save-project', 'get-projects', 'save-features', 'get-features', 'get-scenarios', 'save-label', 'get-labels-by-url', 'run-scenario', 'generate-code'];
+      const validChannels: string[] = ['message-from-renderer', 'open-browser', 'open-upload', 'specification-upload', 'go-back-to-menu', 'save-project', 'get-projects', 'save-features', 'get-features', 'get-scenarios', 'save-label', 'get-labels-by-url', 'run-scenario', 'generate-code', 'auto-generate-labels', 'save-multiple-labels'];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
       }

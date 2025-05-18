@@ -28,7 +28,7 @@ const LabelListPanel: React.FC<LabelListPanelProps> = ({ labels, loading, error,
   };
 
   return (
-    <div className="flex-1 p-4 bg-muted/20 border-l overflow-y-auto max-w-md flex flex-col">
+    <div className="flex-1 p-4 bg-muted/20 border-l overflow-y-auto max-w-md flex flex-col h-full">
       <div className="flex justify-between items-center mb-4 pb-2 border-b">
         <h3 className="text-lg font-medium">ラベル一覧</h3>
         <Button
@@ -60,7 +60,7 @@ const LabelListPanel: React.FC<LabelListPanelProps> = ({ labels, loading, error,
           <p className="text-sm text-muted-foreground">「ラベル登録」ボタンをクリックして、ラベルを追加してください。</p>
         </div>
       ) : (
-        <div className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="space-y-3 flex-1 overflow-y-auto">
           {labels.map((label) => (
             <div key={label.id} className="bg-card border rounded-md p-3 shadow-sm">
               <div className="flex justify-between items-center mb-2">

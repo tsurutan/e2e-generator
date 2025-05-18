@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Param, Query, Logger } from '@nestjs/commo
 import { LabelsService } from './labels.service';
 import { LabelDto } from './dto/label.dto';
 import { SaveLabelDto } from './dto/save-label.dto';
+import { AutoGenerateLabelsDto } from './dto/auto-generate-labels.dto';
 
 @Controller('labels')
 export class LabelsController {
@@ -54,5 +55,18 @@ export class LabelsController {
   ): Promise<LabelDto[]> {
     this.logger.log(`URL ${url} のラベルを取得するリクエストを受信しました`);
     return this.labelsService.getLabelsByUrl(url, projectId);
+  }
+
+  /**
+   * HTMLコンテンツからラベルを自動生成するエンドポイント
+   * @param autoGenerateLabelsDto HTMLコンテンツとURL情報
+   * @returns 生成されたラベルのリスト
+   */
+  @Post('auto-generate')
+  async autoGenerateLabels(
+    @Body() autoGenerateLabelsDto: AutoGenerateLabelsDto,
+  ): Promise<LabelDto[]> {
+    this.logger.log('HTMLコンテンツからラベルを自動生成するリクエストを受信しました');
+    return this.labelsService.autoGenerateLabels(autoGenerateLabelsDto);
   }
 }

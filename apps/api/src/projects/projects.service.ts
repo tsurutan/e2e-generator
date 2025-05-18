@@ -10,24 +10,22 @@ export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(): Promise<ProjectWithFeatureCount[]> {
-    // プロジェクト一覧を取得
-    const projects = await this.prisma.project.findMany();
+    // プロジェクト一覧と各プロジェクトの機能数を一度のクエリで取得
+    const projectsWithFeatureCount = await this.prisma.project.findMany({
+      include: {
+        _count: {
+          select: {
+            features: true
+          }
+        }
+      }
+    });
 
-    // 各プロジェクトの機能数を取得
-    const projectsWithFeatureCount = await Promise.all(
-      projects.map(async (project) => {
-        const featureCount = await this.prisma.feature.count({
-          where: { projectId: project.id },
-        });
-
-        return {
-          ...project,
-          featureCount,
-        };
-      })
-    );
-
-    return projectsWithFeatureCount;
+    // 結果を ProjectWithFeatureCount インターフェースの形式に変換
+    return projectsWithFeatureCount.map(project => ({
+      ...project,
+      featureCount: project._count.features
+    }));
   }
 
   async findOne(id: string): Promise<Project> {

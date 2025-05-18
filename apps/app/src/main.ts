@@ -463,3 +463,74 @@ ipcMain.on('generate-code', async (event, data) => {
     }
   }
 });
+
+// Handle auto-generate labels
+ipcMain.on('auto-generate-labels', async (event, data) => {
+  console.log('Auto-generate labels requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = 'http://localhost:3000/api/labels/auto-generate';
+
+    // APIにHTMLコンテンツとURL情報を送信
+    const response = await axios.post(apiUrl, data);
+    console.log('Labels auto-generated from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'labels-auto-generated',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to auto-generate labels from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'labels-auto-generation-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle save multiple labels
+ipcMain.on('save-multiple-labels', async (event, data) => {
+  console.log('Save multiple labels requested:', data);
+
+  try {
+    // 選択されたラベルを一つずつ保存
+    const savedLabels = [];
+    for (const label of data.labels) {
+      // APIサーバーのURL
+      const apiUrl = 'http://localhost:3000/api/labels/save';
+
+      // APIにラベルデータを送信
+      const response = await axios.post(apiUrl, {
+        label: label
+      });
+      console.log('Label saved to API:', response.data);
+      savedLabels.push(response.data);
+    }
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'multiple-labels-saved',
+        data: savedLabels
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to save multiple labels to API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'multiple-labels-save-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
