@@ -16,9 +16,17 @@ interface LogEntry {
   message: string;
 }
 
+interface TriggerAction {
+  type: string;
+  selector: string;
+  text?: string;
+  timestamp: string;
+}
+
 interface ElementInfo {
   selector: string;
   text?: string;
+  triggerActions?: TriggerAction[];
 }
 
 const BrowserPage: React.FC<BrowserPageProps> = () => {
@@ -45,6 +53,8 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
   const [isGeneratingLabels, setIsGeneratingLabels] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isSavingMultipleLabels, setIsSavingMultipleLabels] = useState(false);
+  const [userActions, setUserActions] = useState<TriggerAction[]>([]);
+  const [isRecordingActions, setIsRecordingActions] = useState(true); // デフォルトでアクション記録を有効化
   const webviewRef = useRef<Electron.WebviewTag | null>(null);
 
   // Update URL when projectUrl changes
@@ -207,10 +217,32 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         if (eventMessage.startsWith('LABEL_REGISTER:')) {
           try {
             const data = JSON.parse(eventMessage.replace('LABEL_REGISTER:', ''));
+            // 記録されたアクションを要素情報に追加
+            data.triggerActions = userActions;
             setSelectedElement(data);
             setShowLabelPopup(true);
           } catch (error) {
             addLog('error', `Failed to parse label data: ${error}`);
+          }
+        }
+        // ユーザーアクションの記録
+        else if (eventMessage.startsWith('USER_ACTION:')) {
+          try {
+            const actionData = JSON.parse(eventMessage.replace('USER_ACTION:', ''));
+            if (isRecordingActions) {
+              // 新しいアクションを追加
+              setUserActions(prevActions => {
+                // 最大アクション数を制限（10個まで）
+                const newActions = [...prevActions, actionData];
+                if (newActions.length > 10) {
+                  return newActions.slice(-10);
+                }
+                return newActions;
+              });
+              addLog('info', `アクション記録: ${actionData.type} on ${actionData.selector}`);
+            }
+          } catch (error) {
+            addLog('error', `Failed to parse action data: ${error}`);
           }
         }
       }
@@ -231,6 +263,64 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
           }
         \`;
         document.head.appendChild(style);
+      }
+
+      // セレクタを生成する関数
+      function generateSelector(element) {
+        if (!element) return '';
+
+        // IDがあればそれを使用
+        if (element.id) {
+          return '#' + element.id;
+        }
+
+        // クラス名があれば最初の2つまで使用
+        if (element.className && typeof element.className === 'string') {
+          const classes = element.className.split(' ').filter(c => c && !c.includes('e2e-app-'));
+          if (classes.length > 0) {
+            return element.tagName.toLowerCase() + '.' + classes.slice(0, 2).join('.');
+          }
+        }
+
+        // タグ名と属性を使用
+        let selector = element.tagName.toLowerCase();
+        if (element.hasAttribute('type')) {
+          selector += '[type="' + element.getAttribute('type') + '"]';
+        } else if (element.hasAttribute('name')) {
+          selector += '[name="' + element.getAttribute('name') + '"]';
+        }
+
+        // 親要素の情報を追加
+        if (element.parentElement && element.parentElement !== document.body) {
+          const parentTag = element.parentElement.tagName.toLowerCase();
+          const siblings = Array.from(element.parentElement.children);
+          const index = siblings.indexOf(element);
+          if (siblings.length > 1) {
+            selector = parentTag + ' > ' + selector + ':nth-child(' + (index + 1) + ')';
+          } else {
+            selector = parentTag + ' > ' + selector;
+          }
+        }
+
+        return selector;
+      }
+
+      // ユーザーアクションを記録する関数
+      function recordUserAction(type, element, additionalData = {}) {
+        if (!element) return;
+
+        const selector = generateSelector(element);
+        const text = element.textContent ? element.textContent.trim().substring(0, 50) : '';
+
+        const actionData = {
+          type,
+          selector,
+          text,
+          timestamp: new Date().toISOString(),
+          ...additionalData
+        };
+
+        console.log('[EVENT] USER_ACTION:' + JSON.stringify(actionData));
       }
 
       // Function to handle mouseover events for hover highlight
@@ -265,6 +355,11 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         if (text && text.length >= 20) text += '...';
 
         console.log('[EVENT] Click: <' + tagName + id + classes + '>' + (text ? ' "' + text + '"' : ''));
+
+        // ラベル登録モードでない場合はアクションを記録
+        if (!window.testpilotLabelRegisterActive) {
+          recordUserAction('click', target);
+        }
       });
 
       // Track hover events
@@ -284,6 +379,7 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         let action = form.action || 'unknown';
 
         console.log('[EVENT] Form submit: <form' + id + '> to ' + action);
+        recordUserAction('submit', form, { action });
       });
 
       // Track input changes
@@ -295,6 +391,19 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         let name = target.name ? '[name=' + target.name + ']' : '';
 
         console.log('[EVENT] Input: <' + tagName + type + id + name + '>');
+
+        // ラベル登録モードでない場合はアクションを記録
+        if (!window.testpilotLabelRegisterActive) {
+          let value = '';
+          if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) {
+            value = target.value;
+            // パスワードフィールドの場合は値を隠す
+            if (target.type === 'password') {
+              value = '********';
+            }
+          }
+          recordUserAction('input', target, { value: value.substring(0, 50) });
+        }
       }, { passive: true });
 
       console.log('[EVENT] Event listeners injected');
@@ -650,7 +759,7 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
       {showLabelPopup && selectedElement && (
         <LabelPopup
           elementInfo={selectedElement}
-          onSave={(name, description) => {
+          onSave={(name, description, includeTriggerActions) => {
             if (!projectId) {
               addLog('error', 'プロジェクトIDが設定されていません。プロジェクトを作成してください。');
               setShowLabelPopup(false);
@@ -689,12 +798,16 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
               elementText: selectedElement.text,
               url: currentUrl,
               queryParams,
-              projectId
+              projectId,
+              // トリガーアクション情報を含める場合のみ追加
+              triggerActions: includeTriggerActions ? selectedElement.triggerActions : undefined
             };
 
             addLog('info', `ラベル「${name}」を保存中...`);
             window.api.send('save-label', labelData);
 
+            // アクション履歴をクリア
+            setUserActions([]);
             setShowLabelPopup(false);
             setSelectedElement(null);
           }}

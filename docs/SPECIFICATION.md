@@ -172,6 +172,23 @@ TestPilotは、Webアプリケーションのテスト自動化を支援する�
 | createdAt | DateTime | 作成日時 |
 | updatedAt | DateTime | 更新日時 |
 
+### Label（ラベル）
+
+| フィールド | 型 | 説明 |
+|------------|------|-------------|
+| id | UUID | プライマリキー |
+| name | String | ラベル名（最大100文字） |
+| description | String | ラベルの説明（オプション） |
+| selector | String | 要素のCSSセレクタ |
+| xpath | String | 要素のXPath（オプション） |
+| elementText | String | 要素のテキスト内容（オプション） |
+| url | String | ラベルが登録されたページのURL |
+| queryParams | String | URLのクエリパラメータ部分（オプション） |
+| triggerActions | JSON | 要素表示のトリガーとなったアクション情報（オプション） |
+| projectId | UUID | 関連するプロジェクトのID（外部キー） |
+| createdAt | DateTime | 作成日時 |
+| updatedAt | DateTime | 更新日時 |
+
 ## API仕様
 
 ### プロジェクト関連

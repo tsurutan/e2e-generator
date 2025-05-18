@@ -1,3 +1,32 @@
+/**
+ * トリガーアクションの型定義
+ */
+export interface TriggerAction {
+  /**
+   * アクションのタイプ（クリック、入力など）
+   * @example "click"
+   */
+  type: string;
+
+  /**
+   * アクション対象要素のセレクタ
+   * @example "button.login-button"
+   */
+  selector: string;
+
+  /**
+   * アクション対象要素のテキスト（オプション）
+   * @example "ログイン"
+   */
+  text?: string;
+
+  /**
+   * アクションが発生した時刻
+   * @example "2023-01-01T12:34:56.789Z"
+   */
+  timestamp: string;
+}
+
 export class LabelDto {
   /**
    * ラベルのID（データベースから取得する場合のみ）
@@ -45,6 +74,12 @@ export class LabelDto {
    * @example "?redirect=dashboard&theme=dark"
    */
   queryParams?: string;
+
+  /**
+   * 要素表示のトリガーとなったアクション情報（オプション）
+   * 動的に表示される要素（モーダルなど）の場合に使用
+   */
+  triggerActions?: TriggerAction[];
 
   /**
    * 関連するプロジェクトのID

@@ -1,3 +1,5 @@
+import { TriggerAction } from './label.dto';
+
 export class CreateLabelDto {
   /**
    * ラベルの名前
@@ -40,6 +42,12 @@ export class CreateLabelDto {
    * @example "?redirect=dashboard&theme=dark"
    */
   queryParams?: string;
+
+  /**
+   * 要素表示のトリガーとなったアクション情報（オプション）
+   * 動的に表示される要素（モーダルなど）の場合に使用
+   */
+  triggerActions?: TriggerAction[];
 
   /**
    * 関連するプロジェクトのID

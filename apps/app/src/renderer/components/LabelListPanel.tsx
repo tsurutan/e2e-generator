@@ -1,12 +1,20 @@
 import React from 'react';
 import { Button } from './ui/button';
 
+interface TriggerAction {
+  type: string;
+  selector: string;
+  text?: string;
+  timestamp: string;
+}
+
 interface Label {
   id: string;
   name: string;
   description?: string;
   selector: string;
   elementText?: string;
+  triggerActions?: TriggerAction[];
   createdAt?: string;
 }
 
@@ -25,6 +33,16 @@ const LabelListPanel: React.FC<LabelListPanelProps> = ({ labels, loading, error,
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleString();
+  };
+
+  // アクションタイプを日本語表示に変換する関数
+  const getActionTypeText = (type: string): string => {
+    switch (type) {
+      case 'click': return 'クリック';
+      case 'input': return '入力';
+      case 'submit': return '送信';
+      default: return type;
+    }
   };
 
   return (
@@ -79,7 +97,26 @@ const LabelListPanel: React.FC<LabelListPanelProps> = ({ labels, loading, error,
               <div className="text-xs space-y-1 border-t pt-2 mt-2">
                 <p className="font-mono break-all"><span className="font-medium">セレクタ:</span> {label.selector}</p>
                 {label.elementText && <p><span className="font-medium">テキスト:</span> {label.elementText}</p>}
-                {label.createdAt && <p className="text-muted-foreground"><span className="font-medium">作成日時:</span> {formatDate(label.createdAt)}</p>}
+
+                {/* トリガーアクション情報を表示 */}
+                {label.triggerActions && label.triggerActions.length > 0 && (
+                  <div className="mt-2 border-t pt-2">
+                    <p className="font-medium text-xs mb-1">トリガーアクション:</p>
+                    <div className="bg-muted/30 p-1 rounded text-[10px]">
+                      {label.triggerActions.slice(0, 2).map((action, index) => (
+                        <div key={index} className="mb-1 last:mb-0">
+                          <span className="font-medium">{getActionTypeText(action.type)}</span>
+                          <span className="text-muted-foreground ml-1">{action.selector}</span>
+                        </div>
+                      ))}
+                      {label.triggerActions.length > 2 && (
+                        <div className="text-muted-foreground">他 {label.triggerActions.length - 2} 件のアクション...</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {label.createdAt && <p className="text-muted-foreground mt-1"><span className="font-medium">作成日時:</span> {formatDate(label.createdAt)}</p>}
               </div>
             </div>
           ))}

@@ -37,18 +37,19 @@ model Feature {
 }
 
 model Label {
-  id          String   @id @default(uuid())
-  name        String   @db.VarChar(100)
-  description String?
-  selector    String
-  xpath       String?
-  elementText String?
-  url         String
-  queryParams String?
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String   @db.VarChar(100)
+  description   String?
+  selector      String
+  xpath         String?
+  elementText   String?
+  url           String
+  queryParams   String?
+  triggerActions Json?    // 要素表示のトリガーとなったアクション情報
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("labels")
 }

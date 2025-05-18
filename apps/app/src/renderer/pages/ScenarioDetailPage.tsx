@@ -22,6 +22,54 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
 
+  // メッセージリスナーを登録
+  useEffect(() => {
+    // メインプロセスからの応答を受信するハンドラー
+    const handleMessage = (message: any) => {
+      console.log('Received message from main process:', message);
+
+      // シナリオ実行の成功メッセージ
+      if (message.type === 'scenario-run-success' && message.data?.scenarioId === scenario?.id) {
+        setLogs(message.data.logs);
+        setIsRunning(false);
+      }
+      // シナリオ実行のエラーメッセージ
+      else if (message.type === 'scenario-run-error') {
+        // シナリオのIDを確認
+        const messageScenarioId = message.scenarioId || message.data?.scenarioId;
+        if (messageScenarioId === scenario?.id) {
+          console.log('Error running scenario:', message.error);
+          setError(message.error);
+          setIsRunning(false);
+        }
+      }
+      // コード生成の成功メッセージ
+      else if (message.type === 'code-generated' && message.data?.scenarioId === scenario?.id) {
+        setGeneratedCode(message.data.code);
+        setIsGeneratingCode(false);
+      }
+      // コード生成のエラーメッセージ
+      else if (message.type === 'code-generation-error') {
+        // シナリオのIDを確認
+        const messageScenarioId = message.scenarioId || message.data?.scenarioId;
+        if (messageScenarioId === scenario?.id) {
+          console.log('Error generating code:', message.error);
+          setCodeError(message.error);
+          setIsGeneratingCode(false);
+        }
+      }
+    };
+
+    // メッセージリスナーを登録
+    window.api.receive('message-from-main', handleMessage);
+
+    // クリーンアップ関数（実際にはリスナーを削除する方法がないため、空の関数を返す）
+    return () => {
+      // 実際にはipcRendererのリスナーを削除する方法がないため、何もしない
+      // 実際の実装では、リスナーの削除方法を提供するべき
+    };
+  }, [scenario]);
+
   // 機能詳細画面に戻る
   const handleBackClick = () => {
     if (scenario?.featureId) {
@@ -49,6 +97,8 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
     setLogs([]);
     setError(null);
 
+    console.log('Sending run-scenario request for scenario:', scenario.id);
+
     // メインプロセスにシナリオ実行リクエストを送信
     window.api.send('run-scenario', {
       id: scenario.id,
@@ -59,19 +109,7 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
       generatedCode: generatedCode // 生成されたコードがあれば使用する
     });
 
-    // メインプロセスからの応答を受信
-    const handleMessage = (message: any) => {
-      if (message.type === 'scenario-run-success' && message.data.scenarioId === scenario.id) {
-        setLogs(message.data.logs);
-        setIsRunning(false);
-      } else if (message.type === 'scenario-run-error' && message.data.scenarioId === scenario.id) {
-        setError(message.error);
-        setIsRunning(false);
-      }
-    };
-
-    // メッセージリスナーを登録
-    window.api.receive('message-from-main', handleMessage);
+    // メッセージリスナーはコンポーネントのマウント時に登録済み
   };
 
   // Playwrightコードを生成する
@@ -82,25 +120,15 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
     setGeneratedCode(null);
     setCodeError(null);
 
+    console.log('Sending generate-code request for scenario:', scenario.id);
+
     // メインプロセスにコード生成リクエストを送信
     window.api.send('generate-code', {
       id: scenario.id,
       projectUrl: projectUrl
     });
 
-    // メインプロセスからの応答を受信
-    const handleMessage = (message: any) => {
-      if (message.type === 'code-generated' && message.data.scenarioId === scenario.id) {
-        setGeneratedCode(message.data.code);
-        setIsGeneratingCode(false);
-      } else if (message.type === 'code-generation-error' && message.data?.scenarioId === scenario.id) {
-        setCodeError(message.error);
-        setIsGeneratingCode(false);
-      }
-    };
-
-    // メッセージリスナーを登録
-    window.api.receive('message-from-main', handleMessage);
+    // メッセージリスナーはコンポーネントのマウント時に登録済み
   };
 
   // 日付をフォーマット

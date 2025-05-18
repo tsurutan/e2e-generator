@@ -75,7 +75,8 @@ export async function runGeneratedCode(code: string, scenarioId: string): Promis
 
     // アプリのテストディレクトリにファイルを作成
     const appDir = path.resolve(__dirname, '../../..');
-    const testsDir = path.join(appDir, 'tests');
+    // apps/app/tests ディレクトリを使用する
+    const testsDir = path.join(appDir, 'apps', 'app', 'tests');
 
     // testsディレクトリが存在するか確認
     if (!fs.existsSync(testsDir)) {
@@ -107,7 +108,8 @@ export async function runGeneratedCode(code: string, scenarioId: string): Promis
     };
 
     // Playwrightを実行（ヘッドレスモードを無効化）
-    const command = `cd ${appDir} && npx playwright test ${path.relative(appDir, testFilePath)} --headed`;
+    // playwright.config.jsが存在するディレクトリを指定
+    const command = `cd ${appDir} && npx playwright test ${path.relative(appDir, testFilePath)} --config=apps/app/playwright.config.js --headed`;
     logs.push(`実行コマンド: ${command}`);
 
     try {

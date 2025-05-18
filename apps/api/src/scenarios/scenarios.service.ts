@@ -13,6 +13,7 @@ import {
   CodeResponseDto,
 } from './dto';
 import { generatePlaywrightCode } from './utils/playwright-code-generator';
+import { LabelDto } from '../labels/dto/label.dto';
 
 @Injectable()
 export class ScenariosService {
@@ -333,14 +334,35 @@ export class ScenariosService {
       }
 
       // プロジェクトに関連するラベルを取得
-      const labels = projectId
+      let labels = projectId
         ? await this.prisma.label.findMany({
             where: { projectId },
           })
         : [];
 
+      // triggerActionsフィールドがJSON文字列の場合はパースする
+      const parsedLabels = labels.map(label => {
+        if (label.triggerActions && typeof label.triggerActions === 'string') {
+          try {
+            const parsedLabel = {
+              ...label,
+              triggerActions: JSON.parse(label.triggerActions as string)
+            };
+            return parsedLabel as unknown as LabelDto;
+          } catch (error) {
+            this.logger.warn(`ラベルID ${label.id} のtriggerActionsのJSONパースに失敗しました: ${error.message}`);
+            const fallbackLabel = {
+              ...label,
+              triggerActions: undefined
+            };
+            return fallbackLabel as unknown as LabelDto;
+          }
+        }
+        return label as unknown as LabelDto;
+      });
+
       // Playwrightコードを生成（非同期関数に変更）
-      const code = await generatePlaywrightCode(scenario, labels, url);
+      const code = await generatePlaywrightCode(scenario, parsedLabels as unknown as LabelDto[], url);
 
       this.logger.log(`シナリオID ${id} のPlaywrightコードを生成しました`);
 
