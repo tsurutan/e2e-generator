@@ -3,6 +3,8 @@ import { LabelDto } from '../../labels/dto/label.dto';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { Logger } from '@nestjs/common';
+import { MultiServerMCPClient } from '@langchain/mcp-adapters';
+import { ToolMessage } from '@langchain/core/messages';
 
 // ロガーの初期化
 const logger = new Logger('PlaywrightCodeGenerator');
@@ -42,11 +44,22 @@ export async function generatePlaywrightCode(
       temperature: 0.2,
     });
 
+    // MCP クライアントの初期化
+    const mcpClient = new MultiServerMCPClient({
+      math: {
+        command: 'npx',
+        args: ['@playwright/mcp@latest', '--headless'],
+      },
+    });
+
     // 構造化出力を使用せず、テキスト出力を直接取得する
 
     // プロンプトテンプレートの作成
     const systemPrompt = `あなたはPlaywrightのテストコードを生成する専門家です。
 与えられたシナリオとラベル情報から、Playwrightを使用したテストコードを生成してください。
+
+あなたはMicrosoft Playwright Test Runner (MCP)ツールを使用して、高品質なテストコードを生成します。
+MCPツールを使用することで、より堅牢で信頼性の高いテストコードを生成できます。
 
 以下の情報が提供されます：
 1. シナリオ情報（タイトル、説明、Given、When、Then）
@@ -60,6 +73,7 @@ export async function generatePlaywrightCode(
 - Given、When、Thenの各ステップに対応するコードを生成すること
 - コードにはコメントを含め、理解しやすくすること
 - 実行可能な完全なテストコードを生成すること
+- MCPが提供する機能を活用して、より堅牢なテストを作成すること
 
 コードは以下の構造を持つ必要があります：
 1. ファイルの先頭にコメントとimport文
@@ -68,7 +82,14 @@ export async function generatePlaywrightCode(
 4. セレクタ変数の定義
 5. Given、When、Thenの各ステップに対応するコード
 
-ラベル情報を最大限に活用し、シナリオの内容に基づいて適切なアクションと検証を実装してください。`;
+ラベル情報を最大限に活用し、シナリオの内容に基づいて適切なアクションと検証を実装してください。
+
+MCPが提供する以下の機能を活用してください：
+- 要素の可視性や存在の確認
+- 適切なタイミングでの待機処理
+- 堅牢なセレクタの使用
+- エラーハンドリング
+- テスト実行の安定性向上のためのベストプラクティス`;
 
     const humanPrompt = `シナリオ情報：
 タイトル: {title}
@@ -107,10 +128,52 @@ Then: {then}
 
     logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成を開始します`);
 
-    // LLMの呼び出し
-    const result = await llm.invoke(prompt);
+    // 結果を格納する変数
+    let result;
 
-    logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成が完了しました`);
+    try {
+      // MCPツールを取得
+      const tools = await mcpClient.getTools('math');
+
+      // MCPツールを使用してLLMを拡張
+      const llmWithTools = llm.bind({
+        tools,
+      });
+
+      logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成を開始します（MCPツール使用）`);
+
+      // LLMの呼び出し（MCPツール使用）
+      result = await llmWithTools.invoke([
+        {
+          type: 'human',
+          content: JSON.stringify(prompt),
+        },
+        {
+          type: 'tool',
+          tool_call_id: 'browser_generate_playwright_test',
+          name: 'browser_generate_playwright_test',
+          content: JSON.stringify({
+            name: scenario.title,
+            description: scenario.description || '説明なし',
+            steps: [
+              { type: 'given', description: scenario.given },
+              { type: 'when', description: scenario.when },
+              { type: 'then', description: scenario.then }
+            ]
+          }),
+        },
+      ]);
+
+      logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成が完了しました（MCPツール使用）`);
+    } catch (error) {
+      logger.error(`MCPツールの使用中にエラーが発生しました: ${error.message}`);
+      logger.log('標準のLLM呼び出しにフォールバックします...');
+
+      // 標準のLLM呼び出しにフォールバック
+      result = await llm.invoke(prompt);
+
+      logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成が完了しました（標準呼び出し）`);
+    }
 
     // レスポンスの構造をログに出力
     logger.log(`レスポンスの構造: ${JSON.stringify(Object.keys(result))}`);

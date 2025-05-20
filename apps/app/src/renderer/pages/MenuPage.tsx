@@ -29,6 +29,11 @@ const MenuPage: React.FC<MenuPageProps> = () => {
     navigate('/projects');
   };
 
+  // Handle personas button click
+  const handlePersonasClick = () => {
+    navigate('/personas');
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <header className="bg-primary text-primary-foreground p-5 text-center shadow-md">
@@ -83,6 +88,21 @@ const MenuPage: React.FC<MenuPageProps> = () => {
                   <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"></path>
                 </svg>
                 仕様書のアップロード
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all">
+            <CardContent className="p-0">
+              <Button
+                variant="ghost"
+                className="w-full px-5 py-3 h-auto justify-start text-lg"
+                onClick={handlePersonasClick}
+              >
+                <svg className="w-6 h-6 mr-4 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+                </svg>
+                ペルソナ管理
               </Button>
             </CardContent>
           </Card>

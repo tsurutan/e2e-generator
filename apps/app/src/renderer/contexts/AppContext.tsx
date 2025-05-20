@@ -34,6 +34,17 @@ export interface Scenario {
   updatedAt: string;
 }
 
+// Persona interface
+export interface Persona {
+  id?: string;
+  name: string;
+  email: string;
+  password: string;
+  projectId: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // API Status interface
 export interface ApiStatus {
   loading: boolean;
@@ -52,8 +63,15 @@ interface AppContextType {
   setSelectedFeature: (feature: Feature | null) => void;
   selectedScenario: Scenario | null;
   setSelectedScenario: (scenario: Scenario | null) => void;
+  personas: Persona[];
+  setPersonas: (personas: Persona[]) => void;
+  selectedPersona: Persona | null;
+  setSelectedPersona: (persona: Persona | null) => void;
   handleProjectCreate: (name: string, url: string) => void;
   handleSelectProject: (project: Project) => void;
+  handlePersonaCreate: (name: string, email: string, password: string, projectId: string) => void;
+  handlePersonaUpdate: (id: string, name?: string, email?: string, password?: string) => void;
+  handlePersonaDelete: (id: string) => void;
 }
 
 // Create context with default values
@@ -68,8 +86,15 @@ const AppContext = createContext<AppContextType>({
   setSelectedFeature: () => {},
   selectedScenario: null,
   setSelectedScenario: () => {},
+  personas: [],
+  setPersonas: () => {},
+  selectedPersona: null,
+  setSelectedPersona: () => {},
   handleProjectCreate: () => {},
   handleSelectProject: () => {},
+  handlePersonaCreate: () => {},
+  handlePersonaUpdate: () => {},
+  handlePersonaDelete: () => {},
 });
 
 // Provider props interface
@@ -92,6 +117,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
   // State to store selected scenario
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
+  // State to store personas list
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  // State to store selected persona
+  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
 
   // Check if project exists in localStorage on mount
   useEffect(() => {
@@ -148,6 +177,36 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     localStorage.setItem('project', JSON.stringify(selectedProject));
   };
 
+  // Function to handle persona creation
+  const handlePersonaCreate = (name: string, email: string, password: string, projectId: string) => {
+    const newPersona = { name, email, password, projectId };
+    setApiStatus({ loading: true, error: null });
+
+    // Send to main process to save to API
+    window.api.send('save-persona', newPersona);
+  };
+
+  // Function to handle persona update
+  const handlePersonaUpdate = (id: string, name?: string, email?: string, password?: string) => {
+    const updateData: any = { id };
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (password !== undefined) updateData.password = password;
+
+    setApiStatus({ loading: true, error: null });
+
+    // Send to main process to update in API
+    window.api.send('update-persona', updateData);
+  };
+
+  // Function to handle persona deletion
+  const handlePersonaDelete = (id: string) => {
+    setApiStatus({ loading: true, error: null });
+
+    // Send to main process to delete from API
+    window.api.send('delete-persona', { id });
+  };
+
   // Context value
   const value = {
     project,
@@ -160,8 +219,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setSelectedFeature,
     selectedScenario,
     setSelectedScenario,
+    personas,
+    setPersonas,
+    selectedPersona,
+    setSelectedPersona,
     handleProjectCreate,
     handleSelectProject,
+    handlePersonaCreate,
+    handlePersonaUpdate,
+    handlePersonaDelete,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

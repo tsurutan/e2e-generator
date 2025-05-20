@@ -121,8 +121,16 @@ export async function runGeneratedCode(code: string, scenarioId: string): Promis
       if (stderr) {
         logs.push(`エラー出力: ${stderr}`);
       }
+
+      // テストが成功した場合は成功メッセージを追加
+      logs.push('テストが正常に完了しました。');
     } catch (execError: unknown) {
       logs.push(`実行中にエラーが発生しました:`);
+
+      // 詳細なエラー情報を収集
+      let errorMessage = '';
+      let stackTrace = '';
+
       if (typeof execError === 'object' && execError !== null) {
         const err = execError as { stdout?: string; stderr?: string; error?: Error };
         if (err.stdout) {
@@ -130,13 +138,26 @@ export async function runGeneratedCode(code: string, scenarioId: string): Promis
         }
         if (err.stderr) {
           logs.push(`エラー出力: ${err.stderr}`);
+          errorMessage += err.stderr;
         }
         if (err.error) {
           logs.push(`エラーメッセージ: ${err.error.message}`);
+          errorMessage += err.error.message;
+          if (err.error.stack) {
+            stackTrace = err.error.stack;
+            logs.push(`スタックトレース: ${err.error.stack}`);
+          }
         }
       } else {
-        logs.push(`エラー詳細: ${String(execError)}`);
+        const errString = String(execError);
+        logs.push(`エラー詳細: ${errString}`);
+        errorMessage = errString;
       }
+
+      // エラー情報をスローする
+      const error = new Error(errorMessage);
+      error.stack = stackTrace;
+      throw error;
     }
 
     logs.push('シナリオの実行が完了しました');

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Play, Loader2, Code } from 'lucide-react';
+import { Play, Loader2, Code, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAppContext, Scenario } from '../contexts/AppContext';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { Progress } from '../components/ui/progress';
 
 interface ScenarioDetailPageProps {
   scenarioId?: string;
@@ -21,6 +23,10 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
   const [error, setError] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [attemptCount, setAttemptCount] = useState<number>(0);
+  const [maxAttempts] = useState<number>(3);
+  const [isImproving, setIsImproving] = useState<boolean>(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
 
   // メッセージリスナーを登録
   useEffect(() => {
@@ -41,12 +47,34 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
           console.log('Error running scenario:', message.error);
           setError(message.error);
           setIsRunning(false);
+          setTestStatus('failed');
+
+          // 試行回数が最大値未満の場合、コードを改良して再実行
+          if (attemptCount < maxAttempts) {
+            console.log(`試行回数: ${attemptCount + 1}/${maxAttempts}`);
+            setIsImproving(true);
+
+            // エラー情報をAPIに送信してコードを改良
+            window.api.send('improve-code', {
+              id: scenario!.id,
+              code: generatedCode,
+              errorMessage: message.error,
+              stackTrace: message.stackTrace || '',
+              attemptNumber: attemptCount + 1,
+              projectUrl: projectUrl
+            });
+          }
         }
       }
       // コード生成の成功メッセージ
       else if (message.type === 'code-generated' && message.data?.scenarioId === scenario?.id) {
         setGeneratedCode(message.data.code);
         setIsGeneratingCode(false);
+
+        // 生成されたコードを自動的に実行する
+        if (scenario) {
+          handleRunGeneratedCode(message.data.code);
+        }
       }
       // コード生成のエラーメッセージ
       else if (message.type === 'code-generation-error') {
@@ -56,6 +84,29 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
           console.log('Error generating code:', message.error);
           setCodeError(message.error);
           setIsGeneratingCode(false);
+          setIsImproving(false);
+        }
+      }
+      // コード改良の成功メッセージ
+      else if (message.type === 'code-improved' && message.data?.scenarioId === scenario?.id) {
+        setGeneratedCode(message.data.code);
+        setIsImproving(false);
+
+        // 改良されたコードを自動的に実行する
+        if (scenario) {
+          // 試行回数を更新
+          setAttemptCount(message.data.generationAttempt);
+          handleRunGeneratedCode(message.data.code);
+        }
+      }
+      // コード改良のエラーメッセージ
+      else if (message.type === 'code-improvement-error') {
+        // シナリオのIDを確認
+        const messageScenarioId = message.scenarioId || message.data?.scenarioId;
+        if (messageScenarioId === scenario?.id) {
+          console.log('Error improving code:', message.error);
+          setCodeError(`コード改良中にエラーが発生しました: ${message.error}`);
+          setIsImproving(false);
         }
       }
     };
@@ -89,15 +140,16 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
     }
   }, [scenarioId, scenario]);
 
-  // シナリオを実行する
-  const handleRunScenario = () => {
+  // 生成されたコードを実行する
+  const handleRunGeneratedCode = (code: string) => {
     if (!scenario) return;
 
     setIsRunning(true);
     setLogs([]);
     setError(null);
+    setTestStatus('running');
 
-    console.log('Sending run-scenario request for scenario:', scenario.id);
+    console.log('Sending run-scenario request with generated code for scenario:', scenario.id);
 
     // メインプロセスにシナリオ実行リクエストを送信
     window.api.send('run-scenario', {
@@ -106,8 +158,37 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
       given: scenario.given,
       when: scenario.when,
       then: scenario.then,
-      generatedCode: generatedCode // 生成されたコードがあれば使用する
+      generatedCode: code
     });
+  };
+
+  // シナリオを実行する
+  const handleRunScenario = () => {
+    if (!scenario) return;
+
+    // 試行回数をリセット
+    setAttemptCount(0);
+    setTestStatus('running');
+
+    if (generatedCode) {
+      // 生成済みのコードがある場合はそれを実行
+      handleRunGeneratedCode(generatedCode);
+    } else {
+      setIsRunning(true);
+      setLogs([]);
+      setError(null);
+
+      console.log('Sending run-scenario request for scenario:', scenario.id);
+
+      // メインプロセスにシナリオ実行リクエストを送信
+      window.api.send('run-scenario', {
+        id: scenario.id,
+        url: projectUrl || 'https://www.google.com', // プロジェクトのURLを使用する
+        given: scenario.given,
+        when: scenario.when,
+        then: scenario.then
+      });
+    }
 
     // メッセージリスナーはコンポーネントのマウント時に登録済み
   };
@@ -116,6 +197,9 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
   const handleGenerateCode = () => {
     if (!scenario) return;
 
+    // 試行回数をリセット
+    setAttemptCount(0);
+    setTestStatus('idle');
     setIsGeneratingCode(true);
     setGeneratedCode(null);
     setCodeError(null);
@@ -221,6 +305,58 @@ const ScenarioDetailPage: React.FC<ScenarioDetailPageProps> = ({ scenarioId }) =
                   </div>
                 </div>
               </div>
+
+              {/* テスト実行ステータスの表示 */}
+              {testStatus !== 'idle' && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium border-b pb-1 mb-3">テスト実行ステータス</h3>
+                  <div className="space-y-4">
+                    {/* 試行回数と進捗バーの表示 */}
+                    {attemptCount > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">試行回数: {attemptCount}/{maxAttempts}</span>
+                          {testStatus === 'running' && <span className="text-sm text-blue-500">実行中...</span>}
+                          {testStatus === 'success' && <span className="text-sm text-green-500">成功</span>}
+                          {testStatus === 'failed' && attemptCount >= maxAttempts && <span className="text-sm text-red-500">失敗</span>}
+                        </div>
+                        <Progress value={(attemptCount / maxAttempts) * 100} className="h-2" />
+                      </div>
+                    )}
+
+                    {/* 実行ステータスのアラート表示 */}
+                    {testStatus === 'success' && (
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <AlertTitle className="text-green-700">テスト成功</AlertTitle>
+                        <AlertDescription className="text-green-600">
+                          シナリオのテストが正常に完了しました。
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {testStatus === 'failed' && attemptCount >= maxAttempts && (
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                        <AlertTitle className="text-red-700">テスト失敗</AlertTitle>
+                        <AlertDescription className="text-red-600">
+                          {maxAttempts}回試行しましたが、テストは失敗しました。詳細なエラー情報を確認してください。
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {isImproving && (
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+                        <AlertTitle className="text-blue-700">コード改良中</AlertTitle>
+                        <AlertDescription className="text-blue-600">
+                          エラー情報を分析し、より堅牢なテストコードを生成しています...
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 実行結果の表示 */}
               {(logs.length > 0 || error) && (

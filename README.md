@@ -19,6 +19,7 @@
 - 抽出された機能一覧のプロジェクトへの関連付け、保存、表示
 - Gherkin記法に基づいたシナリオの自動生成
 - 機能ごとのシナリオ管理と表示
+- Microsoft Playwright Test Runner（MCP）を活用した高品質なテストコードの自動生成
 
 ## 技術スタック
 
@@ -33,6 +34,7 @@
 - **Docker**: コンテナ化プラットフォーム
 - **LangChain**: 大規模言語モデル（LLM）アプリケーション構築フレームワーク
 - **OpenAI API**: GPT-4oを使用した自然言語処理
+- **Playwright MCP**: Microsoft Playwright Test Runner（MCP）を使用した高品質なテスト自動化
 
 ## プロジェクト構造
 

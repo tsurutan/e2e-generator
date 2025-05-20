@@ -14,7 +14,7 @@
     "start": "npm run build && electron .",
     "dev": "concurrently \"npm run watch\" \"electron .\"",
     "lint": "echo \"No linting configured\"",
-    "tailwindcss": "npx tailwindcss -i src/renderer/styles/global.css -o ./src/renderer/styles/global.css --watch"
+    "tailwindcss": "npx tailwindcss -i src/renderer/styles/input.css -o src/renderer/styles/input.css --watch"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
@@ -44,7 +44,9 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-checkbox": "^1.3.1",
+    "@radix-ui/react-progress": "^1.1.6",
     "@radix-ui/react-separator": "^1.1.6",
     "axios": "^1.9.0",
     "react": "^19.1.0",

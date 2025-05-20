@@ -11,6 +11,7 @@ import {
   SaveScenariosDto,
   ExtractScenariosDto,
   CodeResponseDto,
+  TestErrorDto,
 } from './dto';
 import { generatePlaywrightCode } from './utils/playwright-code-generator';
 import { LabelDto } from '../labels/dto/label.dto';
@@ -372,6 +373,167 @@ export class ScenariosService {
       };
     } catch (error) {
       this.logger.error('コード生成中にエラーが発生しました', error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * テスト実行エラーに基づいてコードを改良する
+   * @param testErrorDto テスト実行エラーのデータ
+   * @returns 改良されたコード
+   */
+  async improveCode(testErrorDto: TestErrorDto): Promise<CodeResponseDto> {
+    try {
+      this.logger.log(`シナリオID ${testErrorDto.scenarioId} のPlaywrightコードを改良します（試行回数: ${testErrorDto.attemptNumber}）`);
+
+      // シナリオを取得
+      const scenario = await this.prisma.scenario.findUnique({
+        where: { id: testErrorDto.scenarioId },
+        include: {
+          feature: {
+            include: {
+              project: true,
+            },
+          },
+        },
+      });
+
+      if (!scenario) {
+        throw new NotFoundException(`シナリオID ${testErrorDto.scenarioId} が見つかりません`);
+      }
+
+      // プロジェクトIDを取得
+      const projectId = scenario.feature?.project?.id;
+
+      // プロジェクトのURLを取得
+      let url = testErrorDto.projectUrl;
+      if (!url && projectId) {
+        const project = await this.prisma.project.findUnique({
+          where: { id: projectId },
+        });
+        if (project) {
+          url = project.url;
+        }
+      }
+
+      // プロジェクトに関連するラベルを取得
+      let labels = projectId
+        ? await this.prisma.label.findMany({
+            where: { projectId },
+          })
+        : [];
+
+      // triggerActionsフィールドがJSON文字列の場合はパースする
+      const parsedLabels = labels.map(label => {
+        if (label.triggerActions && typeof label.triggerActions === 'string') {
+          try {
+            const parsedLabel = {
+              ...label,
+              triggerActions: JSON.parse(label.triggerActions as string)
+            };
+            return parsedLabel as unknown as LabelDto;
+          } catch (error) {
+            this.logger.warn(`ラベルID ${label.id} のtriggerActionsのJSONパースに失敗しました: ${error.message}`);
+            const fallbackLabel = {
+              ...label,
+              triggerActions: undefined
+            };
+            return fallbackLabel as unknown as LabelDto;
+          }
+        }
+        return label as unknown as LabelDto;
+      });
+
+      // プロンプトテンプレートの作成
+      const promptTemplate = ChatPromptTemplate.fromMessages([
+        [
+          'system',
+          `あなたはPlaywrightのテストコードを改良する専門家です。
+与えられたシナリオ、ラベル情報、現在のコード、およびエラー情報から、より堅牢なPlaywrightテストコードを生成してください。
+
+エラー情報を注意深く分析し、以下の点に特に注意してコードを改良してください：
+1. 要素の可視性や存在の確認
+2. 適切なタイミングでの待機処理
+3. 堅牢なセレクタの使用
+4. エラーハンドリング
+5. テスト実行の安定性向上
+
+生成するコードは以下の要件を満たす必要があります：
+- TypeScriptで記述すること
+- Playwrightのtest関数とexpect関数を使用すること
+- セレクタ変数を定義し、ラベル情報を活用すること
+- Given、When、Thenの各ステップに対応するコードを生成すること
+- コードにはコメントを含め、理解しやすくすること
+- 実行可能な完全なテストコードを生成すること
+
+コードは以下の構造を持つ必要があります：
+1. ファイルの先頭にコメントとimport文
+2. シナリオのタイトルと説明を含むJSDocコメント
+3. test関数の呼び出し
+4. セレクタ変数の定義
+5. Given、When、Thenの各ステップに対応するコード
+
+ラベル情報を最大限に活用し、シナリオの内容に基づいて適切なアクションと検証を実装してください。
+
+前回の実行で発生したエラーを分析し、その原因を特定して修正してください。エラーの原因として考えられるものと、それに対する対策をコメントとして含めてください。`,
+        ],
+        [
+          'human',
+          `シナリオ情報:
+タイトル: {scenario.title}
+説明: {scenario.description || '説明なし'}
+Given: {scenario.given}
+When: {scenario.when}
+Then: {scenario.then}
+
+現在のコード:
+{testErrorDto.code}
+
+エラー情報:
+{testErrorDto.errorMessage}
+
+スタックトレース:
+{testErrorDto.stackTrace || 'スタックトレースなし'}
+
+試行回数: {testErrorDto.attemptNumber}
+
+プロジェクトURL: {url || 'URLなし'}
+
+利用可能なラベル情報:
+{parsedLabels.length > 0 ? JSON.stringify(parsedLabels, null, 2) : 'ラベル情報なし'}
+
+上記の情報を元に、エラーを修正した改良版のPlaywrightテストコードを生成してください。`,
+        ],
+      ]);
+
+      // プロンプトの作成と実行
+      const prompt = await promptTemplate.format({
+        scenario,
+        testErrorDto,
+        url,
+        parsedLabels,
+      });
+
+      // LLMの呼び出し
+      const result = await this.llm.invoke(prompt);
+
+      // 生成されたコードを抽出
+      const content = result.content as string;
+      // コードブロックを抽出する正規表現
+      const codeBlockRegex = /```(?:typescript|js|javascript)?(.*?)```/s;
+      const match = content.match(codeBlockRegex);
+      const code = match ? match[1].trim() : content;
+
+      this.logger.log(`シナリオID ${testErrorDto.scenarioId} のPlaywrightコードを改良しました（試行回数: ${testErrorDto.attemptNumber}）`);
+
+      return {
+        code,
+        scenarioId: testErrorDto.scenarioId,
+        generationAttempt: testErrorDto.attemptNumber,
+        previousError: testErrorDto.errorMessage,
+      };
+    } catch (error) {
+      this.logger.error('コード改良中にエラーが発生しました', error.stack);
       throw error;
     }
   }

@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import axios from 'axios';
 import { runScenario, runGeneratedCode } from './utils/playwright-runner';
-import { generatePlaywrightCode } from './utils/playwright-code-generator';
 
 // Keep a global reference of the window object to prevent it from being garbage collected
 let mainWindow: BrowserWindow | null = null;
@@ -424,7 +423,8 @@ ipcMain.on('run-scenario', async (event, data) => {
       event.sender.send('message-from-main', {
         type: 'scenario-run-error',
         error: error.message || 'Unknown error',
-        scenarioId: data.id
+        scenarioId: data.id,
+        stackTrace: error.stack || ''
       });
     }
   }
@@ -457,6 +457,46 @@ ipcMain.on('generate-code', async (event, data) => {
     if (event.sender) {
       event.sender.send('message-from-main', {
         type: 'code-generation-error',
+        error: error.message || 'Unknown error',
+        scenarioId: data.id
+      });
+    }
+  }
+});
+
+// Handle improve Playwright code based on test errors
+ipcMain.on('improve-code', async (event, data) => {
+  console.log('Improve code requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/scenarios/${data.id}/improve-code`;
+
+    // APIにエラー情報を送信して改良されたコードを取得
+    const response = await axios.post(apiUrl, {
+      scenarioId: data.id,
+      code: data.code,
+      errorMessage: data.errorMessage,
+      stackTrace: data.stackTrace,
+      attemptNumber: data.attemptNumber,
+      projectUrl: data.projectUrl
+    });
+    console.log('Code improved from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'code-improved',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to improve code from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'code-improvement-error',
         error: error.message || 'Unknown error',
         scenarioId: data.id
       });
@@ -529,6 +569,166 @@ ipcMain.on('save-multiple-labels', async (event, data) => {
     if (event.sender) {
       event.sender.send('message-from-main', {
         type: 'multiple-labels-save-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle get personas by project ID
+ipcMain.on('get-personas', async (event, data) => {
+  console.log('Get personas requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/personas/project/${data.projectId}`;
+
+    // APIからペルソナ一覧を取得
+    const response = await axios.get(apiUrl);
+    console.log('Personas loaded from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'personas-loaded',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to load personas from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'personas-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle get persona by ID
+ipcMain.on('get-persona', async (event, data) => {
+  console.log('Get persona requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/personas/${data.personaId}`;
+
+    // APIからペルソナを取得
+    const response = await axios.get(apiUrl);
+    console.log('Persona loaded from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-loaded',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to load persona from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle save persona
+ipcMain.on('save-persona', async (event, data) => {
+  console.log('Save persona requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = 'http://localhost:3000/api/personas';
+
+    // APIにペルソナデータを送信
+    const response = await axios.post(apiUrl, data);
+    console.log('Persona saved to API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-save-success',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to save persona to API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-save-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle update persona
+ipcMain.on('update-persona', async (event, data) => {
+  console.log('Update persona requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/personas/${data.id}`;
+
+    // APIにペルソナデータを送信
+    const response = await axios.put(apiUrl, data);
+    console.log('Persona updated in API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-update-success',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to update persona in API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-update-error',
+        error: error.message || 'Unknown error'
+      });
+    }
+  }
+});
+
+// Handle delete persona
+ipcMain.on('delete-persona', async (event, data) => {
+  console.log('Delete persona requested:', data);
+
+  try {
+    // APIサーバーのURL
+    const apiUrl = `http://localhost:3000/api/personas/${data.id}`;
+
+    // APIからペルソナを削除
+    const response = await axios.delete(apiUrl);
+    console.log('Persona deleted from API:', response.data);
+
+    // 成功メッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-delete-success',
+        data: response.data
+      });
+    }
+  } catch (error: any) {
+    console.error('Failed to delete persona from API:', error);
+
+    // エラーメッセージをレンダラープロセスに送信
+    if (event.sender) {
+      event.sender.send('message-from-main', {
+        type: 'persona-delete-error',
         error: error.message || 'Unknown error'
       });
     }

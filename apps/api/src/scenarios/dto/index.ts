@@ -6,3 +6,4 @@ export * from './scenario-list.dto';
 export * from './extract-scenarios.dto';
 export * from './generate-code.dto';
 export * from './code-response.dto';
+export * from './test-error.dto';

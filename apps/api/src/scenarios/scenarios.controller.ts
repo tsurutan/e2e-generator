@@ -8,6 +8,7 @@ import {
   ExtractScenariosDto,
   GenerateCodeDto,
   CodeResponseDto,
+  TestErrorDto,
 } from './dto';
 
 @Controller('scenarios')
@@ -100,5 +101,19 @@ export class ScenariosController {
   ): Promise<CodeResponseDto> {
     this.logger.log(`シナリオID ${id} のPlaywrightコードを生成するリクエストを受信しました`);
     return this.scenariosService.generateCode(id, projectUrl);
+  }
+
+  /**
+   * テスト実行エラーを受け取り、改良されたコードを生成するエンドポイント
+   * @param testErrorDto テスト実行エラーのデータ
+   * @returns 改良されたコード
+   */
+  @Post(':id/improve-code')
+  async improveCode(
+    @Param('id') id: string,
+    @Body() testErrorDto: TestErrorDto,
+  ): Promise<CodeResponseDto> {
+    this.logger.log(`シナリオID ${id} のPlaywrightコードを改良するリクエストを受信しました（試行回数: ${testErrorDto.attemptNumber}）`);
+    return this.scenariosService.improveCode(testErrorDto);
   }
 }
