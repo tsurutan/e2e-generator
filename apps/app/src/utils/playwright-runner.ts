@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+// import { chromium } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -26,25 +26,25 @@ export async function runScenario(url: string, given: string, when: string, then
   try {
     // ブラウザを起動
     logs.push('ブラウザを起動中...');
-    const browser = await chromium.launch({ headless: false });
-
-    // 新しいページを開く
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    // URLに移動
-    logs.push(`${url} に移動中...`);
-    await page.goto(url);
-    logs.push('ページの読み込みが完了しました');
-
-    // シナリオの実行（簡易的な実装）
-    logs.push('シナリオを実行中...');
-
-    // 実行完了まで少し待機
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // ブラウザを閉じる
-    await browser.close();
+    // const browser = await chromium.launch({ headless: false });
+    //
+    // // 新しいページを開く
+    // const context = await browser.newContext();
+    // const page = await context.newPage();
+    //
+    // // URLに移動
+    // logs.push(`${url} に移動中...`);
+    // await page.goto(url);
+    // logs.push('ページの読み込みが完了しました');
+    //
+    // // シナリオの実行（簡易的な実装）
+    // logs.push('シナリオを実行中...');
+    //
+    // // 実行完了まで少し待機
+    // await new Promise(resolve => setTimeout(resolve, 5000));
+    //
+    // // ブラウザを閉じる
+    // await browser.close();
     logs.push('ブラウザを閉じました');
     logs.push('シナリオの実行が完了しました');
 

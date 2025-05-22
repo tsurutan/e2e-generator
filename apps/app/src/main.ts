@@ -14,7 +14,7 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false, // For security reasons
       contextIsolation: true, // Protect against prototype pollution
-      preload: path.join(__dirname, 'preload.js'), // Use a preload script
+      preload: path.join(__dirname, '..', 'preload', 'preload.js'), // Use a preload script
       webviewTag: true // Enable the webview tag
     }
   });
@@ -23,13 +23,19 @@ function createWindow(): void {
   mainWindow.loadFile('dist/renderer/index.html');
 
   // Open DevTools in development
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // Emitted when the window is closed
   mainWindow.on('closed', () => {
     // Dereference the window object
     mainWindow = null;
   });
+
+  if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  }
 }
 
 // Create window when Electron has finished initialization
