@@ -1,3 +1,4 @@
+import {trpc} from '@repo/trpc/src/client';
 import React from 'react';
 import { Button } from './ui/button';
 
@@ -28,6 +29,7 @@ interface LabelListPanelProps {
 }
 
 const LabelListPanel: React.FC<LabelListPanelProps> = ({ labels, loading, error, currentUrl, onRefresh, onFocusElement }) => {
+  const { mutateAsync: deleteLabel } = trpc.labelsRouter.deleteLabel.useMutation();
   // 日付をフォーマット
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -92,6 +94,10 @@ const LabelListPanel: React.FC<LabelListPanelProps> = ({ labels, loading, error,
                 >
                   🔍
                 </Button>
+                <Button onClick={async () => {
+                  await deleteLabel({ id: label.id });
+                  onRefresh();
+                }}></Button>
               </div>
               {label.description && <p className="text-sm text-muted-foreground italic mb-2">{label.description}</p>}
               <div className="text-xs space-y-1 border-t pt-2 mt-2">

@@ -354,4 +354,10 @@ export class LabelsService {
       throw error;
     }
   }
+
+  async deleteLabel(id: string): Promise<void> {
+    await this.prisma.label.delete({
+      where: { id },
+    });
+  }
 }

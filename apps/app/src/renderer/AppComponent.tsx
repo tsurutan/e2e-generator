@@ -1,5 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import {trpc} from '@repo/trpc/src/client';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {httpBatchLink} from '@trpc/client';
+import React, {useState} from 'react';
+import {BrowserRouter as Router, Routes, Route, Navigate, useParams} from 'react-router-dom';
 import MenuPage from './pages/MenuPage';
 import BrowserPage from './pages/BrowserPage';
 import UploadPage from './pages/UploadPage';
@@ -11,59 +14,71 @@ import ScenarioDetailPage from './pages/ScenarioDetailPage';
 import PersonaListPage from './pages/PersonaListPage';
 import PersonaCreatePage from './pages/PersonaCreatePage';
 import PersonaEditPage from './pages/PersonaEditPage';
-import { AppProvider } from './contexts/AppContext';
+import {AppProvider} from './contexts/AppContext';
 import './styles/output.css';
 
 // Define Electron API interface
 declare global {
-  interface Window {
-    api: {
-      send: (channel: string, data: any) => void;
-      receive: (channel: string, func: (...args: any[]) => void) => void;
-    };
-  }
+    interface Window {
+        api: {
+            send: (channel: string, data: any) => void;
+            receive: (channel: string, func: (...args: any[]) => void) => void;
+        };
+    }
 }
 
 // FeatureDetail wrapper component to handle params
 const FeatureDetailWrapper: React.FC = () => {
-  const { featureId } = useParams<{ featureId: string }>();
-  return <FeatureDetailPage featureId={featureId} />;
+    const {featureId} = useParams<{ featureId: string }>();
+    return <FeatureDetailPage featureId={featureId}/>;
 };
 
 // ScenarioDetail wrapper component to handle params
 const ScenarioDetailWrapper: React.FC = () => {
-  const { scenarioId } = useParams<{ scenarioId: string }>();
-  return <ScenarioDetailPage scenarioId={scenarioId} />;
+    const {scenarioId} = useParams<{ scenarioId: string }>();
+    return <ScenarioDetailPage scenarioId={scenarioId}/>;
 };
 
 // PersonaEdit wrapper component to handle params
 const PersonaEditWrapper: React.FC = () => {
-  const { personaId } = useParams<{ personaId: string }>();
-  return <PersonaEditPage personaId={personaId} />;
+    const {personaId} = useParams<{ personaId: string }>();
+    return <PersonaEditPage personaId={personaId}/>;
 };
 
 const App: React.FC = () => {
-  return (
-    <AppProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/projects" replace />} />
-          <Route path="/create-project" element={<ProjectCreatePage />} />
-          <Route path="/menu" element={<MenuPage />} />
-          <Route path="/browser" element={<BrowserPage />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/projects" element={<ProjectListPage />} />
-          <Route path="/features" element={<FeatureListPage />} />
-          <Route path="/features/:featureId" element={<FeatureDetailWrapper />} />
-          <Route path="/scenarios/:scenarioId" element={<ScenarioDetailWrapper />} />
-          <Route path="/personas" element={<PersonaListPage />} />
-          <Route path="/create-persona" element={<PersonaCreatePage />} />
-          <Route path="/edit-persona/:personaId" element={<PersonaEditWrapper />} />
-          <Route path="*" element={<Navigate to="/projects" replace />} />
-        </Routes>
-      </Router>
-    </AppProvider>
-  );
+    const [queryClient] = useState(() => new QueryClient())
+    const [trpcClient] = useState(() => trpc.createClient({
+        links: [
+            httpBatchLink({
+                url: 'http://localhost:3000/trpc',
+            })
+        ],
+    }))
+    return (
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+                <AppProvider>
+                    <Router>
+                        <Routes>
+                            <Route path="/" element={<Navigate to="/projects" replace/>}/>
+                            <Route path="/create-project" element={<ProjectCreatePage/>}/>
+                            <Route path="/menu" element={<MenuPage/>}/>
+                            <Route path="/browser" element={<BrowserPage/>}/>
+                            <Route path="/upload" element={<UploadPage/>}/>
+                            <Route path="/projects" element={<ProjectListPage/>}/>
+                            <Route path="/features" element={<FeatureListPage/>}/>
+                            <Route path="/features/:featureId" element={<FeatureDetailWrapper/>}/>
+                            <Route path="/scenarios/:scenarioId" element={<ScenarioDetailWrapper/>}/>
+                            <Route path="/personas" element={<PersonaListPage/>}/>
+                            <Route path="/create-persona" element={<PersonaCreatePage/>}/>
+                            <Route path="/edit-persona/:personaId" element={<PersonaEditWrapper/>}/>
+                            <Route path="*" element={<Navigate to="/projects" replace/>}/>
+                        </Routes>
+                    </Router>
+                </AppProvider>
+            </QueryClientProvider>
+        </trpc.Provider>
+    );
 };
 
 export default App;

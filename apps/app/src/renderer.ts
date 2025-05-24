@@ -12,7 +12,6 @@ interface Window {
 // DOM Elements
 const urlInput = document.getElementById('url-input') as HTMLInputElement;
 const loadButton = document.getElementById('load-button') as HTMLButtonElement;
-const webviewContainer = document.getElementById('webview-container') as HTMLDivElement;
 const eventLog = document.getElementById('event-log') as HTMLDivElement;
 const clearLogButton = document.getElementById('clear-log') as HTMLButtonElement;
 
@@ -45,21 +44,13 @@ function init(): void {
 
 // Create a new webview element
 function createWebview(url: string): void {
-  // Remove existing webview if any
-  if (webview && webview.parentNode) {
-    webviewContainer.removeChild(webview);
-  }
 
   // Create new webview
   webview = document.createElement('webview') as Electron.WebviewTag;
   webview.src = formatURL(url);
   webview.setAttribute('allowpopups', 'true');
 
-  // Add event listeners to the webview
   setupWebviewEvents();
-
-  // Add webview to the container
-  webviewContainer.appendChild(webview);
 }
 
 // Format URL (add https:// if not present)
