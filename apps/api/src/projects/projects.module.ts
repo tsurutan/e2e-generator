@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
+import {ConfigModule} from '@nestjs/config';
+import {ProjectsRouter} from 'src/projects/projects.router';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { FeaturesModule } from '../features/features.module';
 
 @Module({
-  imports: [FeaturesModule],
+  imports: [FeaturesModule, ConfigModule],
   controllers: [ProjectsController],
-  providers: [ProjectsService],
+  providers: [ProjectsService, ProjectsRouter],
   exports: [ProjectsService],
 })
 export class ProjectsModule {}

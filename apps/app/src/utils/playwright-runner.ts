@@ -1,61 +1,7 @@
-// import { chromium } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
-
-/**
- * シナリオを実行するためのPlaywrightスクリプトを生成して実行する
- * @param url 対象のURL
- * @param given 前提条件
- * @param when 実行するアクション
- * @param then 期待される結果
- * @returns 実行結果のログ
- */
-/**
- * シナリオを実行する（生成されたコードがない場合のフォールバック）
- */
-export async function runScenario(url: string, given: string, when: string, then: string): Promise<string[]> {
-  const logs: string[] = [];
-  logs.push(`シナリオの実行を開始します...`);
-  logs.push(`URL: ${url}`);
-  logs.push(`Given: ${given}`);
-  logs.push(`When: ${when}`);
-  logs.push(`Then: ${then}`);
-
-  try {
-    // ブラウザを起動
-    logs.push('ブラウザを起動中...');
-    // const browser = await chromium.launch({ headless: false });
-    //
-    // // 新しいページを開く
-    // const context = await browser.newContext();
-    // const page = await context.newPage();
-    //
-    // // URLに移動
-    // logs.push(`${url} に移動中...`);
-    // await page.goto(url);
-    // logs.push('ページの読み込みが完了しました');
-    //
-    // // シナリオの実行（簡易的な実装）
-    // logs.push('シナリオを実行中...');
-    //
-    // // 実行完了まで少し待機
-    // await new Promise(resolve => setTimeout(resolve, 5000));
-    //
-    // // ブラウザを閉じる
-    // await browser.close();
-    logs.push('ブラウザを閉じました');
-    logs.push('シナリオの実行が完了しました');
-
-    return logs;
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logs.push(`エラーが発生しました: ${errorMessage}`);
-    return logs;
-  }
-}
-
 /**
  * 生成されたPlaywrightコードを実行する
  * @param code 生成されたPlaywrightコード
@@ -74,9 +20,9 @@ export async function runGeneratedCode(code: string, scenarioId: string): Promis
     }
 
     // アプリのテストディレクトリにファイルを作成
-    const appDir = path.resolve(__dirname, '../../..');
+    const appDir = path.resolve(__dirname, '..');
     // apps/app/tests ディレクトリを使用する
-    const testsDir = path.join(appDir, 'apps', 'app', 'tests');
+    const testsDir = path.join(appDir, 'tests');
 
     // testsディレクトリが存在するか確認
     if (!fs.existsSync(testsDir)) {
@@ -109,7 +55,7 @@ export async function runGeneratedCode(code: string, scenarioId: string): Promis
 
     // Playwrightを実行（ヘッドレスモードを無効化）
     // playwright.config.jsが存在するディレクトリを指定
-    const command = `cd ${appDir} && npx playwright test ${path.relative(appDir, testFilePath)} --config=apps/app/playwright.config.js --headed`;
+    const command = `cd ${appDir} && npx playwright test ${path.relative(appDir, testFilePath)} --config dist/playwright.config.js --headed`;
     logs.push(`実行コマンド: ${command}`);
 
     try {

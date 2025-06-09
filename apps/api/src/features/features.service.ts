@@ -1,3 +1,4 @@
+import {ChatGoogleGenerativeAI} from '@langchain/google-genai';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatOpenAI } from '@langchain/openai';
@@ -13,17 +14,16 @@ import { SaveFeaturesDto } from './dto/save-features.dto';
 @Injectable()
 export class FeaturesService {
   private readonly logger = new Logger(FeaturesService.name);
-  private readonly llm: ChatOpenAI;
+  private readonly llm: ChatGoogleGenerativeAI;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly scenariosService: ScenariosService,
   ) {
-    // OpenAI APIの初期化
-    this.llm = new ChatOpenAI({
-      openAIApiKey: this.configService.get<string>('OPENAI_API_KEY'),
-      modelName: 'gpt-4o',
+    this.llm = new ChatGoogleGenerativeAI({
+      apiKey: this.configService.get<string>('GOOGLE_API_KEY'),
+      model: "gemini-2.0-flash",
       temperature: 0,
     });
   }
@@ -66,6 +66,15 @@ export class FeaturesService {
           .array(featureSchema)
           .describe('仕様書から抽出された機能のリスト'),
       });
+      const labels = await this.prisma.label.findMany({
+        where: { projectId: uploadSpecificationDto.projectId },
+      });
+      const pages = await this.prisma.page.findMany({
+        where: { projectId: uploadSpecificationDto.projectId },
+      });
+      const edges = await this.prisma.edge.findMany({
+        where: { projectId: uploadSpecificationDto.projectId },
+      });
 
       // プロンプトテンプレートの作成
       const promptTemplate = ChatPromptTemplate.fromMessages([
@@ -75,7 +84,12 @@ export class FeaturesService {
 与えられた仕様書のテキストから、実装すべき機能を抽出してください。
 各機能には名前と説明を含めてください。
 機能名は簡潔に、説明は詳細に記述してください。
-仕様書に明示的に記載されている機能のみを抽出し、推測や仮定は避けてください。`,
+仕様書に明示的に記載されている機能のみを抽出し、推測や仮定は避けてください。
+またすでに登録されている下記サイト情報を考慮してください。
+labels: {labels}
+pages: {pages}
+edges: {edges}
+`,
         ],
         ['human', '{text}'],
       ]);
@@ -88,6 +102,9 @@ export class FeaturesService {
       // プロンプトの作成と実行
       const prompt = await promptTemplate.invoke({
         text: uploadSpecificationDto.text,
+        labels: JSON.stringify(labels),
+        pages: JSON.stringify(pages),
+        edges: JSON.stringify(edges),
       });
 
       // LLMの呼び出し
@@ -257,5 +274,14 @@ export class FeaturesService {
       this.logger.error('機能取得中にエラーが発生しました', error.stack);
       throw error;
     }
+  }
+
+  async deleteFeature(id: string): Promise<void> {
+    await this.prisma.scenario.deleteMany({
+      where: { featureId: id },
+    });
+    await this.prisma.feature.delete({
+      where: { id },
+    });
   }
 }

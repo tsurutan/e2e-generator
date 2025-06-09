@@ -1,10 +1,10 @@
+import {trpc} from '@repo/trpc/src/client';
 import React, {useState, useRef, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import LabelPopup from '../components/LabelPopup';
 import LabelListPanel from '../components/LabelListPanel';
 import LabelReviewPanel from '../components/LabelReviewPanel';
 import {Button} from '../components/ui/button';
-import {Input} from '../components/ui/input';
 import {useAppContext} from '../contexts/AppContext';
 
 interface BrowserPageProps {
@@ -30,11 +30,17 @@ interface ElementInfo {
     triggerActions?: TriggerAction[];
 }
 
+const getNormalizedURL = (url: string) => {
+    const urlObj = new URL(url);
+    urlObj.hash = '';
+    return urlObj.toString();
+};
+
 const BrowserPage: React.FC<BrowserPageProps> = () => {
     const navigate = useNavigate();
     const {project} = useAppContext();
-    const projectUrl = project?.url;
-    const projectId = project?.id;
+    const projectUrl = project!.url!;
+    const projectId = project!.id!;
     const [url, setUrl] = useState(projectUrl || 'https://www.google.com');
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [logIdCounter, setLogIdCounter] = useState(0);
@@ -57,6 +63,8 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
     const [userActions, setUserActions] = useState<TriggerAction[]>([]);
     const [isRecordingActions, setIsRecordingActions] = useState(true); // デフォルトでアクション記録を有効化
     const webviewRef = useRef<Electron.WebviewTag | null>(null);
+    const { mutateAsync: savePage } = trpc.pagesRouter.savePage.useMutation();
+    const { mutateAsync: generateAllResources } = trpc.projectsRouter.generateAllResources.useMutation();
 
     // Update URL when projectUrl changes
     useEffect(() => {
@@ -176,8 +184,26 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
 
         });
 
+        webview.addEventListener('did-navigate', async (event) => {
+            const url = getNormalizedURL(event.url);
+            if(url !== currentUrl) {
+                await savePage({url, projectId})
+            }
+            refreshLabels();
+        });
+        webview.addEventListener('did-navigate-in-page', async (event) => {
+            const url = getNormalizedURL(event.url);
+            if(url !== currentUrl) {
+                await savePage({url, projectId})
+            }
+            refreshLabels();
+        })
+
         // Console message events
         webview.addEventListener('console-message', (event) => {
+            if(event.message.startsWith('[MUTATION]')) {
+                console.log('event = ', event.message)
+            }
             if (event.message.startsWith('[EVENT]')) {
                 const eventMessage = event.message.replace('[EVENT] ', '');
                 // Check for label registration events
@@ -219,6 +245,28 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
     // Inject event listeners into the loaded page
     const injectEventListeners = (webview: Electron.WebviewTag) => {
         const script = `
+        let lastClickedElement = null;
+        document.addEventListener('mousedown', (event) => {
+          lastClickedElement = event.target;
+          console.log('[MUTATION]最後にクリックした要素:', lastClickedElement);
+        });
+        const observer = new MutationObserver(function (mutations) {
+  for (const mutation of mutations) {
+    if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          console.log("[MUTATION] 追加されたノード:", node.innerHTML, lastClickedElement);
+        }
+      });
+    }
+  }
+});
+
+observer.observe(document.body, {
+  childList: true,
+  subtree: true,
+  attributes: true,
+});
       // Add CSS for hover highlight if not already added
       if (!document.getElementById('e2e-app-styles')) {
         const style = document.createElement('style');
@@ -400,7 +448,6 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
     const handleBackClick = () => {
         navigate('/menu');
     };
-
     // ラベル一覧を更新する関数
     const refreshLabels = () => {
         if (!projectId) return;
@@ -414,7 +461,7 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         let url = '';
         if (webviewRef.current) {
             url = webviewRef.current.getURL();
-            setCurrentUrl(url);
+            setCurrentUrl(getNormalizedURL(url));
         }
 
         // ラベル一覧を取得するリクエストを送信
@@ -643,41 +690,32 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
                 .catch(error => {
 
                 });
-
-
         }
     };
 
     return (
         <div className="flex flex-col h-screen">
-            <div className="flex flex-wrap p-3 gap-3 bg-muted/30 border-b items-center">
-                <Button
-                    variant="outline"
-                    onClick={handleBackClick}
-                    className="flex items-center gap-1"
-                    size="sm"
-                >
-                    <span className="mr-1">←</span> メニューに戻る
-                </Button>
-                <div className="flex flex-1 min-w-[300px]">
-                    <Input
-                        id="url-input"
-                        type="text"
-                        value={url}
-                        onChange={handleUrlChange}
-                        onKeyPress={handleUrlKeyPress}
-                        placeholder="Enter URL (e.g., https://www.google.com)"
-                        className="rounded-r-none"
-                    />
+            <div className="flex flex-wrap p-3 gap-3 bg-muted/30 border-b items-center justify-between">
+                <div>
                     <Button
-                        id="load-button"
-                        onClick={loadURL}
-                        className="rounded-l-none"
+                        variant="outline"
+                        onClick={handleBackClick}
+                        className="flex items-center gap-1"
+                        size="sm"
                     >
-                        Load
+                        <span className="mr-1">←</span> メニューに戻る
                     </Button>
                 </div>
                 <div className="flex gap-2">
+                    <Button
+                        variant="secondary"
+                        onClick={async () => {
+                            await generateAllResources({ projectId})
+                        }}
+                        size="sm"
+                    >
+                        サンプル
+                    </Button>
                     <Button
                         variant="secondary"
                         onClick={handleAutoGenerateLabelsClick}

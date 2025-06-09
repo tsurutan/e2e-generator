@@ -1,13 +1,20 @@
-import { ScenarioDto } from '../dto';
-import { LabelDto } from '../../labels/dto/label.dto';
-import { ChatOpenAI } from '@langchain/openai';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { Logger } from '@nestjs/common';
-import { MultiServerMCPClient } from '@langchain/mcp-adapters';
-import { ToolMessage } from '@langchain/core/messages';
+import {tool} from '@langchain/core/tools';
+import {ChatGoogleGenerativeAI} from '@langchain/google-genai';
+import {ToolException} from '@langchain/mcp-adapters/dist/tools';
+import {createReferenceTools} from 'src/llm-utils';
+import {PrismaService} from 'src/prisma/prisma.service';
+import {z} from 'zod';
+import {ScenarioDto} from '../dto';
+import {LabelDto} from '../../labels/dto/label.dto';
+import {ChatOpenAI} from '@langchain/openai';
+import {ChatPromptTemplate} from '@langchain/core/prompts';
+import {Logger} from '@nestjs/common';
+import {MultiServerMCPClient} from '@langchain/mcp-adapters';
+import {BaseMessage, HumanMessage, ToolMessage} from '@langchain/core/messages';
 
 // ロガーの初期化
 const logger = new Logger('PlaywrightCodeGenerator');
+
 
 /**
  * シナリオとラベル情報からPlaywrightのテストコードを生成する
@@ -17,45 +24,47 @@ const logger = new Logger('PlaywrightCodeGenerator');
  * @returns 生成されたPlaywrightのテストコード
  */
 export async function generatePlaywrightCode(
-  scenario: ScenarioDto,
-  labels: LabelDto[] = [],
-  projectUrl: string = 'https://example.com',
+    scenario: ScenarioDto,
+    labels: LabelDto[] = [],
+    projectUrl: string = 'https://example.com',
+    prisma: PrismaService,
+    projectId: string,
 ): Promise<string> {
-  try {
-    // ファイル名を生成（タイトルをスネークケースに変換）
-    const fileName = scenario.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_|_$/g, '');
+    try {
+        // ファイル名を生成（タイトルをスネークケースに変換）
+        const fileName = scenario.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_|_$/g, '');
 
-    // ラベル情報からセレクタを抽出
-    const labelSelectors = labels.map(label => {
-      return {
-        name: label.name,
-        selector: label.selector,
-        description: label.description || '',
-      };
-    });
+        // ラベル情報からセレクタを抽出
+        const labelSelectors = labels.map(label => {
+            return {
+                name: label.name,
+                selector: label.selector,
+                description: label.description || '',
+            };
+        });
 
-    // OpenAI APIの初期化
-    const llm = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: 'gpt-4o',
-      temperature: 0.2,
-    });
+        // OpenAI APIの初期化
+        const llm = new ChatGoogleGenerativeAI({
+            apiKey: process.env.GOOGLE_API_KEY,
+            model: "gemini-2.0-flash",
+            temperature: 0,
+        });
 
-    // MCP クライアントの初期化
-    const mcpClient = new MultiServerMCPClient({
-      math: {
-        command: 'npx',
-        args: ['@playwright/mcp@latest', '--headless'],
-      },
-    });
+        // MCP クライアントの初期化
+        const mcpClient = new MultiServerMCPClient({
+            playwright: {
+                command: 'npx',
+                args: ['@playwright/mcp@latest', '--headless'],
+            },
+        });
 
-    // 構造化出力を使用せず、テキスト出力を直接取得する
+        // 構造化出力を使用せず、テキスト出力を直接取得する
 
-    // プロンプトテンプレートの作成
-    const systemPrompt = `あなたはPlaywrightのテストコードを生成する専門家です。
+        // プロンプトテンプレートの作成
+        const systemPrompt = `あなたはPlaywrightのテストコードを生成する専門家です。
 与えられたシナリオとラベル情報から、Playwrightを使用したテストコードを生成してください。
 
 あなたはMicrosoft Playwright Test Runner (MCP)ツールを使用して、高品質なテストコードを生成します。
@@ -89,9 +98,15 @@ MCPが提供する以下の機能を活用してください：
 - 適切なタイミングでの待機処理
 - 堅牢なセレクタの使用
 - エラーハンドリング
-- テスト実行の安定性向上のためのベストプラクティス`;
+- テスト実行の安定性向上のためのベストプラクティス
+ログインに必要な情報は
+email: tsurutan.android@gmail.com
+password: Sample1234
+です
+またgetPages, getLabelsを使用して必要な情報を取得し、それらをもとにコードを作成してください。
+`;
 
-    const humanPrompt = `シナリオ情報：
+        const humanPrompt = `シナリオ情報：
 タイトル: {title}
 説明: {description}
 Given: {given}
@@ -105,109 +120,86 @@ Then: {then}
 
 この情報を使用して、Playwrightのテストコードを生成してください。`;
 
-    const promptTemplate = ChatPromptTemplate.fromMessages([
-      ['system', systemPrompt],
-      ['human', humanPrompt]
-    ]);
+        const promptTemplate = ChatPromptTemplate.fromMessages([
+            ['system', systemPrompt],
+            ['human', humanPrompt]
+        ]);
 
-    // ラベル情報を文字列に変換
-    const labelInfo = labelSelectors.length > 0
-      ? labelSelectors.map(label => `名前: ${label.name}\nセレクタ: ${label.selector}\n説明: ${label.description}`).join('\n\n')
-      : 'ラベル情報はありません';
+        // ラベル情報を文字列に変換
+        const labelInfo = labelSelectors.length > 0
+            ? labelSelectors.map(label => `名前: ${label.name}\nセレクタ: ${label.selector}\n説明: ${label.description}`).join('\n\n')
+            : 'ラベル情報はありません';
 
-    // プロンプトの作成と実行
-    const prompt = await promptTemplate.invoke({
-      title: scenario.title,
-      description: scenario.description || '説明なし',
-      given: scenario.given,
-      when: scenario.when,
-      then: scenario.then,
-      projectUrl,
-      labelInfo,
-    });
-
-    logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成を開始します`);
-
-    // 結果を格納する変数
-    let result;
-
-    try {
-      // MCPツールを取得
-      const tools = await mcpClient.getTools('math');
-
-      // MCPツールを使用してLLMを拡張
-      const llmWithTools = llm.bind({
-        tools,
-      });
-
-      logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成を開始します（MCPツール使用）`);
-
-      // LLMの呼び出し（MCPツール使用）
-      result = await llmWithTools.invoke([
-        {
-          type: 'human',
-          content: JSON.stringify(prompt),
-        },
-        {
-          type: 'tool',
-          tool_call_id: 'browser_generate_playwright_test',
-          name: 'browser_generate_playwright_test',
-          content: JSON.stringify({
-            name: scenario.title,
+        // プロンプトの作成と実行
+        const prompt = await promptTemplate.invoke({
+            title: scenario.title,
             description: scenario.description || '説明なし',
-            steps: [
-              { type: 'given', description: scenario.given },
-              { type: 'when', description: scenario.when },
-              { type: 'then', description: scenario.then }
-            ]
-          }),
-        },
-      ]);
+            given: scenario.given,
+            when: scenario.when,
+            then: scenario.then,
+            projectUrl,
+            labelInfo,
+        });
+        // MCPツールを取得
+        const tools = await mcpClient.getTools('playwright');
 
-      logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成が完了しました（MCPツール使用）`);
+        // MCPツールを使用してLLMを拡張
+        const llmWithTools = llm.bind({
+            tools: [...createReferenceTools(prisma, projectId), ...tools],
+        });
+
+        logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成を開始します（MCPツール使用）`);
+        const messages: BaseMessage[] = prompt.messages;
+        let aiMessage = await llmWithTools.invoke(messages);
+        let count = 0;
+        while (true) {
+            for (const toolCall of aiMessage.tool_calls) {
+                const selectedTool = tools.find(tool => tool.name === toolCall.name);
+                if (selectedTool) {
+                    console.dir(toolCall)
+                    try {
+                        // @ts-ignore
+                        const result = await selectedTool.invoke(toolCall);
+                        messages.push(result);
+                    } catch (e) {
+                        console.log(`error = ${e}, handling...`);
+                        messages.push(new ToolMessage({
+                            tool_call_id: toolCall.id,
+                            name: toolCall.name,
+                            content: e.message,
+                        }));
+                        messages.push(new HumanMessage({
+                            content: 'The last tool call raised an exception. Try calling the tool again with corrected arguments. Do not repeat mistakes.'
+                        }))
+                    }
+                }
+            }
+            aiMessage = await llmWithTools.invoke(messages);
+            messages.push(aiMessage);
+            if (aiMessage.tool_calls.length === 0) {
+                break;
+            }
+            count++;
+            console.log(`count = ${count}`)
+        }
+
+
+        const responseText = messages[messages.length - 1].content as string;
+        // 生成されたコードを抽出
+        const codeMatch = responseText.match(/```(?:typescript|js)?([\s\S]*?)```/);
+        if (!codeMatch || !codeMatch[1]) {
+            // コードブロックが見つからない場合は、レスポンス全体をコードとして扱う
+            logger.warn('コードブロックが見つかりませんでした。レスポンス全体を使用します。');
+            return responseText;
+        }
+
+        return codeMatch[1].trim();
     } catch (error) {
-      logger.error(`MCPツールの使用中にエラーが発生しました: ${error.message}`);
-      logger.log('標準のLLM呼び出しにフォールバックします...');
+        logger.error(`Playwrightコード生成中にエラーが発生しました: ${error.message}`, error.stack);
 
-      // 標準のLLM呼び出しにフォールバック
-      result = await llm.invoke(prompt);
-
-      logger.log(`シナリオ「${scenario.title}」のPlaywrightコード生成が完了しました（標準呼び出し）`);
+        // エラーを再スローして上位層で処理できるようにする
+        throw new Error(`Playwrightコードの生成に失敗しました: ${error.message}`);
     }
-
-    // レスポンスの構造をログに出力
-    logger.log(`レスポンスの構造: ${JSON.stringify(Object.keys(result))}`);
-
-    // レスポンスからテキストを取得
-    let responseText = '';
-    if (typeof result === 'string') {
-      responseText = result;
-    } else if (result.content) {
-      responseText = typeof result.content === 'string' ? result.content : JSON.stringify(result.content);
-    } else if (result.text) {
-      responseText = result.text;
-    } else if ("value" in result && result.text) {
-      responseText = typeof result.value === 'string' ? result.value : JSON.stringify(result.value);
-    } else {
-      // その他の場合はオブジェクト全体を文字列化
-      responseText = JSON.stringify(result);
-    }
-
-    // 生成されたコードを抽出
-    const codeMatch = responseText.match(/```(?:typescript|js)?([\s\S]*?)```/);
-    if (!codeMatch || !codeMatch[1]) {
-      // コードブロックが見つからない場合は、レスポンス全体をコードとして扱う
-      logger.warn('コードブロックが見つかりませんでした。レスポンス全体を使用します。');
-      return responseText;
-    }
-
-    return codeMatch[1].trim();
-  } catch (error) {
-    logger.error(`Playwrightコード生成中にエラーが発生しました: ${error.message}`, error.stack);
-
-    // エラーを再スローして上位層で処理できるようにする
-    throw new Error(`Playwrightコードの生成に失敗しました: ${error.message}`);
-  }
 }
 
 

@@ -1,9 +1,9 @@
 import {Module} from '@nestjs/common';
 import {ConfigModule} from '@nestjs/config';
 import {TRPCModule} from 'nestjs-trpc';
+import {PagesModule} from 'src/pages/pages.module';
 import {AppController} from './app.controller';
 import {AppService} from './app.service';
-import {HelloModule} from './hello/hello.module';
 import {ProjectsModule} from './projects/projects.module';
 import {PrismaModule} from './prisma/prisma.module';
 import {FeaturesModule} from './features/features.module';
@@ -22,12 +22,12 @@ import * as path from 'path';
             ],
         }),
         PrismaModule,
-        HelloModule,
         ProjectsModule,
         FeaturesModule,
         LabelsModule,
         ScenariosModule,
         PersonasModule,
+        PagesModule,
         TRPCModule.forRoot({
             autoSchemaFile: '../../packages/trpc/src/'
         })

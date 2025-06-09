@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import axios from 'axios';
-import { runScenario, runGeneratedCode } from './utils/playwright-runner';
+import { runGeneratedCode } from './utils/playwright-runner';
 
 // Keep a global reference of the window object to prevent it from being garbage collected
 let mainWindow: BrowserWindow | null = null;
@@ -395,20 +395,12 @@ ipcMain.on('run-scenario', async (event, data) => {
   console.log('Run scenario requested:', data);
 
   try {
-    let logs: string[];
+    let logs: string[] = [];
 
     // 生成されたコードがあればそれを使用し、なければフォールバックを使用
     if (data.generatedCode) {
       console.log('Using generated code for execution');
       logs = await runGeneratedCode(data.generatedCode, data.id);
-    } else {
-      console.log('No generated code available, using fallback execution');
-      logs = await runScenario(
-        data.url,
-        data.given,
-        data.when,
-        data.then
-      );
     }
 
     // 成功メッセージをレンダラープロセスに送信

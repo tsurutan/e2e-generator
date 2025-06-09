@@ -54,34 +54,15 @@ export class LabelsService {
           name: label.name,
           description: label.description,
           selector: label.selector,
-          xpath: label.xpath,
           elementText: label.elementText,
           url: label.url,
-          queryParams: label.queryParams,
-          triggerActions: label.triggerActions ? JSON.stringify(label.triggerActions) : null,
           projectId: label.projectId,
+          // FIXME
+          uiStateId: 'todo',
         },
       });
 
       this.logger.log(`ラベルID ${savedLabel.id} を保存しました`);
-
-      // triggerActionsフィールドがJSON文字列の場合はパースして返す
-      if (savedLabel.triggerActions && typeof savedLabel.triggerActions === 'string') {
-        try {
-          const parsedLabel = {
-            ...savedLabel,
-            triggerActions: JSON.parse(savedLabel.triggerActions as string)
-          };
-          return parsedLabel as unknown as LabelDto;
-        } catch (error) {
-          this.logger.warn(`ラベルID ${savedLabel.id} のtriggerActionsのJSONパースに失敗しました: ${error.message}`);
-          const fallbackLabel = {
-            ...savedLabel,
-            triggerActions: undefined
-          };
-          return fallbackLabel as unknown as LabelDto;
-        }
-      }
 
       return savedLabel as unknown as LabelDto;
     } catch (error) {
@@ -117,27 +98,7 @@ export class LabelsService {
       });
 
       this.logger.log(`${labels.length}個のラベルを取得しました`);
-
-      // triggerActionsフィールドがJSON文字列の場合はパースする
-      return labels.map(label => {
-        if (label.triggerActions && typeof label.triggerActions === 'string') {
-          try {
-            const parsedLabel = {
-              ...label,
-              triggerActions: JSON.parse(label.triggerActions as string)
-            };
-            return parsedLabel as unknown as LabelDto;
-          } catch (error) {
-            this.logger.warn(`ラベルID ${label.id} のtriggerActionsのJSONパースに失敗しました: ${error.message}`);
-            const fallbackLabel = {
-              ...label,
-              triggerActions: undefined
-            };
-            return fallbackLabel as unknown as LabelDto;
-          }
-        }
-        return label as unknown as LabelDto;
-      });
+      return labels;
     } catch (error) {
       this.logger.error('ラベル取得中にエラーが発生しました', error.stack);
       throw error;
@@ -159,25 +120,7 @@ export class LabelsService {
       this.logger.log(`${labels.length}個のラベルを取得しました`);
 
       // triggerActionsフィールドがJSON文字列の場合はパースする
-      return labels.map(label => {
-        if (label.triggerActions && typeof label.triggerActions === 'string') {
-          try {
-            const parsedLabel = {
-              ...label,
-              triggerActions: JSON.parse(label.triggerActions as string)
-            };
-            return parsedLabel as unknown as LabelDto;
-          } catch (error) {
-            this.logger.warn(`ラベルID ${label.id} のtriggerActionsのJSONパースに失敗しました: ${error.message}`);
-            const fallbackLabel = {
-              ...label,
-              triggerActions: undefined
-            };
-            return fallbackLabel as unknown as LabelDto;
-          }
-        }
-        return label as unknown as LabelDto;
-      });
+      return labels;
     } catch (error) {
       this.logger.error('ラベル取得中にエラーが発生しました', error.stack);
       throw error;
@@ -227,26 +170,7 @@ export class LabelsService {
 
       this.logger.log(`${labels.length}個のラベルを取得しました`);
 
-      // triggerActionsフィールドがJSON文字列の場合はパースする
-      return labels.map(label => {
-        if (label.triggerActions && typeof label.triggerActions === 'string') {
-          try {
-            const parsedLabel = {
-              ...label,
-              triggerActions: JSON.parse(label.triggerActions as string)
-            };
-            return parsedLabel as unknown as LabelDto;
-          } catch (error) {
-            this.logger.warn(`ラベルID ${label.id} のtriggerActionsのJSONパースに失敗しました: ${error.message}`);
-            const fallbackLabel = {
-              ...label,
-              triggerActions: undefined
-            };
-            return fallbackLabel as unknown as LabelDto;
-          }
-        }
-        return label as unknown as LabelDto;
-      });
+      return labels;
     } catch (error) {
       this.logger.error('ラベル取得中にエラーが発生しました', error.stack);
       throw error;

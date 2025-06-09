@@ -20,8 +20,59 @@ model Project {
   features    Feature[]
   labels      Label[]
   personas    Persona[]
+  pages       Page[]
+  edges       Edge[]
+  uiStates    UiState[]
 
   @@map("projects")
+}
+
+model Page {
+  title     String
+  url       String
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  uiStates  UiState[]
+
+  @@id([projectId, url])
+  @@map("pages")
+}
+
+model UiState {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  pageUrl     String
+  projectId   String
+  page        Page     @relation(fields: [pageUrl, projectId], references: [url, projectId])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id])
+  fromEdges   Edge[]   @relation("FromUIState")
+  toEdges     Edge[]   @relation("ToUIState")
+  Label       Label[]
+  /// isDefaultのUIStateはページごとに1つだけ存在する
+  isDefault   Boolean  @default(false)
+
+  @@map("ui_states")
+}
+
+model Edge {
+  id            String   @id @default(uuid())
+  fromUIStateId String
+  fromUIState   UiState  @relation(fields: [fromUIStateId], references: [id], name: "FromUIState")
+  toUIStateId   String
+  toUIState     UiState  @relation(fields: [toUIStateId], references: [id], name: "ToUIState")
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  description   String
+  pageProjectId String?
+
+  @@map("edges")
 }
 
 model Feature {
@@ -38,19 +89,18 @@ model Feature {
 }
 
 model Label {
-  id            String   @id @default(uuid())
-  name          String   @db.VarChar(100)
-  description   String?
-  selector      String
-  xpath         String?
-  elementText   String?
-  url           String
-  queryParams   String?
-  triggerActions Json?    // 要素表示のトリガーとなったアクション情報
-  projectId     String
-  project       Project  @relation(fields: [projectId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  description String?
+  selector    String
+  elementText String?
+  url         String
+  uiStateId   String
+  uiState     UiState  @relation(fields: [uiStateId], references: [id])
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("labels")
 }
@@ -71,14 +121,14 @@ model Scenario {
 }
 
 model Persona {
-  id          String   @id @default(uuid())
-  name        String   @db.VarChar(100)
-  email       String
-  password    String
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  email     String
+  password  String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("personas")
 }

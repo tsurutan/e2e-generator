@@ -110,20 +110,9 @@ const FeatureListPage: React.FC<FeatureListPageProps> = () => {
         ) : features.length === 0 ? (
           <div className="text-center py-10 bg-muted/50 rounded-lg">
             <p className="text-muted-foreground mb-4">機能がありません。仕様書をアップロードして機能を抽出してください。</p>
-            <div className="text-xs bg-muted p-3 rounded inline-block text-left">
-              <p className="font-semibold mb-1">デバッグ情報:</p>
-              <p>projectId: {projectId || 'なし'}</p>
-              <p>featuresの型: {typeof features}</p>
-              <p>featuresは配列か: {Array.isArray(features) ? 'はい' : 'いいえ'}</p>
-            </div>
           </div>
         ) : (
           <div>
-            <div className="text-xs bg-muted p-3 rounded mb-4 inline-block">
-              <p className="font-semibold mb-1">デバッグ情報:</p>
-              <p>表示する機能数: {features.length}</p>
-              <p>最初の機能のID: {features[0]?.id || 'なし'}</p>
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {features.map((feature) => (
                 <Card

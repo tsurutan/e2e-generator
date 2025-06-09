@@ -1,3 +1,4 @@
+import {trpc} from '@repo/trpc/src/client';
 import React, {useState, useEffect, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {Button} from '../components/ui/button';
@@ -15,6 +16,11 @@ const FeatureDetailPage: React.FC<FeatureDetailPageProps> = ({featureId}) => {
     const [scenarios, setScenarios] = useState<Scenario[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const { mutateAsync: deleteFeature } = trpc.featuresRouter.deleteLabel.useMutation({
+        onSuccess: () => {
+            navigate('/features');
+        }
+    });
     // 機能一覧画面に戻る
     const handleBackClick = () => {
         navigate('/features');
@@ -114,13 +120,21 @@ const FeatureDetailPage: React.FC<FeatureDetailPageProps> = ({featureId}) => {
             </header>
 
             <main className="flex-1 p-5 overflow-auto">
-                <div className="mb-5">
+                <div className="mb-5 flex justify-between">
                     <Button
                         variant="outline"
                         onClick={handleBackClick}
                         className="flex items-center gap-1"
                     >
                         <span className="mr-1">←</span> 機能一覧に戻る
+                    </Button>
+
+                    <Button variant="danger" onClick={async () => {
+                        await deleteFeature({
+                            id: feature!.id
+                        })
+                    }}>
+                        削除
                     </Button>
                 </div>
 
