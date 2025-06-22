@@ -20,6 +20,10 @@
     },
     "start": {
       "dependsOn": ["build"]
+    },
+    "check-types": {
+      "dependsOn": ["build"],
+      "outputs": []
     }
   }
 }

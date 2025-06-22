@@ -14,7 +14,8 @@
     "dev": "electron-vite dev",
     "preview": "electron-vite preview",
     "lint": "echo \"No linting configured\"",
-    "tailwindcss": "npx @tailwindcss/cli -i src/renderer/styles/input.css -o src/renderer/styles/output.css --watch"
+    "tailwindcss": "npx @tailwindcss/cli -i src/renderer/styles/input.css -o src/renderer/styles/output.css --watch",
+    "check-types": "npx tsc --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
