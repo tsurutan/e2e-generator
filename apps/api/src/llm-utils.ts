@@ -113,13 +113,15 @@ export const createAllTools = (prisma: PrismaService, projectId: string) => {
             }),
         });
     const saveEdge = tool(
-        async ({fromUIStateId, toUIStateId, description}) => {
+        async ({fromUIStateId, toUIStateId, description, triggeredBy, triggerType}) => {
             return prisma.edge.create({
                 data: {
                     projectId,
                     fromUIStateId,
                     toUIStateId,
                     description,
+                    triggeredBy,
+                    triggerType,
                 },
             });
         },
@@ -130,6 +132,8 @@ export const createAllTools = (prisma: PrismaService, projectId: string) => {
                 fromUIStateId: z.string().describe("遷移元のUIStateのID"),
                 toUIStateId: z.string().describe("遷移先のUIStateのID"),
                 description: z.string().describe("どのボタンを押して遷移するかなど"),
+                triggeredBy: z.string().optional().describe("どの要素をもとにこのUIStateへ遷移したか(Playwrightで要素を取得できる情報)"),
+                triggerType: z.string().optional().describe("clickなどの動作"),
             }),
         });
     const saveUIState = tool(

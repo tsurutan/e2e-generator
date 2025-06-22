@@ -46,6 +46,7 @@ model UiState {
   description String
   pageUrl     String
   projectId   String
+  html        String?
   page        Page     @relation(fields: [pageUrl, projectId], references: [url, projectId])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -71,6 +72,8 @@ model Edge {
   updatedAt     DateTime @updatedAt
   description   String
   pageProjectId String?
+  triggeredBy   String?  // どの要素をもとにこのUIStateへ遷移したか(Playwrightで要素を取得できる情報)
+  triggerType   String?  // clickなどの動作
 
   @@map("edges")
 }

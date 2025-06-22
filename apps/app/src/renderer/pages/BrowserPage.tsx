@@ -53,7 +53,7 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
     const [labels, setLabels] = useState<any[]>([]);
     const [loadingLabels, setLoadingLabels] = useState(false);
     const [labelError, setLabelError] = useState<string | null>(null);
-    const [currentUrl, setCurrentUrl] = useState('');
+    const [currentUrl, setCurrentUrl] = useState('https://cashim.jp');
     const [showLabelList, setShowLabelList] = useState(false);
     const [generatedLabels, setGeneratedLabels] = useState<any[]>([]);
     const [showLabelReviewPanel, setShowLabelReviewPanel] = useState(false);
@@ -63,8 +63,13 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
     const [userActions, setUserActions] = useState<TriggerAction[]>([]);
     const [isRecordingActions, setIsRecordingActions] = useState(true); // デフォルトでアクション記録を有効化
     const webviewRef = useRef<Electron.WebviewTag | null>(null);
-    const { mutateAsync: savePage } = trpc.pagesRouter.savePage.useMutation();
-    const { mutateAsync: generateAllResources } = trpc.projectsRouter.generateAllResources.useMutation();
+    const {mutateAsync: savePage} = trpc.pagesRouter.savePage.useMutation();
+    const {mutateAsync: generateAllResources} = trpc.projectsRouter.generateAllResources.useMutation();
+    const {mutateAsync: createUiState} = trpc.uiStatesRouter.create.useMutation();
+    const { data: defaultUiState } = trpc.uiStatesRouter.getDefaultUiState.useQuery({
+        projectId: projectId,
+        pageUrl: currentUrl,
+    });
 
     // Update URL when projectUrl changes
     useEffect(() => {
@@ -90,7 +95,6 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
                 setLabelSaving(false);
                 setLabelSaveSuccess(true);
                 setLabelSaveError(null);
-
             } else if (message.type === 'label-save-error') {
                 console.error('Error saving label:', message.error);
                 setLabelSaving(false);
@@ -186,23 +190,36 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
 
         webview.addEventListener('did-navigate', async (event) => {
             const url = getNormalizedURL(event.url);
-            if(url !== currentUrl) {
+            if (url !== currentUrl) {
                 await savePage({url, projectId})
             }
             refreshLabels();
         });
         webview.addEventListener('did-navigate-in-page', async (event) => {
             const url = getNormalizedURL(event.url);
-            if(url !== currentUrl) {
+            if (url !== currentUrl) {
                 await savePage({url, projectId})
             }
             refreshLabels();
         })
 
         // Console message events
-        webview.addEventListener('console-message', (event) => {
-            if(event.message.startsWith('[MUTATION]')) {
-                console.log('event = ', event.message)
+        webview.addEventListener('console-message', async (event) => {
+            if (event.message.startsWith('[MUTATION]')) {
+                console.log('event = ', event.message, 'https://www.cashim.jp/sample');
+                const html = event.message.replace('[MUTATION] ', '');
+                if(!html) {
+                    return;
+                }
+                const uiState = await createUiState({
+                    projectId,
+                    pageUrl: 'https://cashim.jp',
+                    description: 'sample',
+                    html,
+                    title: 'UIState',
+                    isDefault: false,
+                })
+
             }
             if (event.message.startsWith('[EVENT]')) {
                 const eventMessage = event.message.replace('[EVENT] ', '');
@@ -248,14 +265,13 @@ const BrowserPage: React.FC<BrowserPageProps> = () => {
         let lastClickedElement = null;
         document.addEventListener('mousedown', (event) => {
           lastClickedElement = event.target;
-          console.log('[MUTATION]最後にクリックした要素:', lastClickedElement);
         });
         const observer = new MutationObserver(function (mutations) {
   for (const mutation of mutations) {
     if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          console.log("[MUTATION] 追加されたノード:", node.innerHTML, lastClickedElement);
+          console.log("[MUTATION]", node.innerHTML);
         }
       });
     }
@@ -710,7 +726,7 @@ observer.observe(document.body, {
                     <Button
                         variant="secondary"
                         onClick={async () => {
-                            await generateAllResources({ projectId})
+                            await generateAllResources({projectId})
                         }}
                         size="sm"
                     >

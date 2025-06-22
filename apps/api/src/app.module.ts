@@ -10,6 +10,8 @@ import {FeaturesModule} from './features/features.module';
 import {LabelsModule} from './labels/labels.module';
 import {ScenariosModule} from './scenarios/scenarios.module';
 import {PersonasModule} from './personas/personas.module';
+import {UiStatesModule} from './ui-states/ui-states.module';
+import {EdgesModule} from './edges/edges.module';
 import * as path from 'path';
 
 @Module({
@@ -28,6 +30,8 @@ import * as path from 'path';
         ScenariosModule,
         PersonasModule,
         PagesModule,
+        UiStatesModule,
+        EdgesModule,
         TRPCModule.forRoot({
             autoSchemaFile: '../../packages/trpc/src/'
         })
