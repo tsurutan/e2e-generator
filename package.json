@@ -17,6 +17,9 @@
     "build": "turbo run build",
     "start": "turbo run start",
     "test": "turbo run test",
+    "test:vitest": "turbo run test:vitest",
+    "test:vitest:run": "turbo run test:vitest:run",
+    "test:vitest:ui": "turbo run test:vitest:ui",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types"
   },

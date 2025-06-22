@@ -11,6 +11,14 @@
       "outputs": [],
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
     },
+    "test:vitest": {
+      "outputs": [],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "**/*.test.ts", "**/*.spec.ts"]
+    },
+    "test:vitest:run": {
+      "outputs": [],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "**/*.test.ts", "**/*.spec.ts"]
+    },
     "lint": {
       "outputs": []
     },
