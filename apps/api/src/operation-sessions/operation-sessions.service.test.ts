@@ -1,23 +1,31 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { OperationSessionsService } from './operation-sessions.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOperationSessionDto, UpdateOperationSessionDto } from '../types/ui-state.types';
-import { getTestDatabase } from '../test/test-database';
+import { createTestPrismaInstance, cleanupTestDatabaseWithInstance, getTestDatabase } from '../test/test-database';
 
 describe('OperationSessionsService', () => {
   let service: OperationSessionsService;
   let prismaService: PrismaService;
+  let testPrisma: PrismaService;
   let testProject: any;
 
   beforeEach(async () => {
+    // テスト開始前にデータベースをクリーンアップ
+    await cleanupTestDatabaseWithInstance(getTestDatabase());
+
     // テスト用のPrismaServiceを作成
-    const testPrisma = getTestDatabase();
+    testPrisma = createTestPrismaInstance();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        OperationSessionsService,
+        {
+          provide: OperationSessionsService,
+          useFactory: (prisma: PrismaService) => new OperationSessionsService(prisma),
+          inject: [PrismaService],
+        },
         {
           provide: PrismaService,
           useValue: testPrisma,
@@ -36,6 +44,15 @@ describe('OperationSessionsService', () => {
         description: 'テスト用のプロジェクト',
       },
     });
+  });
+
+  afterEach(async () => {
+    // 各テスト後に軽量なクリーンアップ（次のテストのbeforeEachで完全クリーンアップ）
+    try {
+      await testPrisma.operationSession.deleteMany();
+    } catch (error) {
+      // エラーは無視（次のbeforeEachで完全クリーンアップされる）
+    }
   });
 
   describe('create', () => {
@@ -103,7 +120,7 @@ describe('OperationSessionsService', () => {
 
     it('特定のプロジェクトのセッションを取得する', async () => {
       // 別のプロジェクトを作成
-      const otherProject = await prismaService.project.create({
+      const otherProject = await testPrisma.project.create({
         data: {
           name: '別のプロジェクト',
           url: 'https://other.com',

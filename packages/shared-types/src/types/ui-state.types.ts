@@ -96,6 +96,19 @@ export interface UIStateTransitionResponse {
   timestamp: Date;
 }
 
+export interface UIStateTransitionWithDetailsResponse extends UIStateTransitionResponse {
+  fromUIState?: {
+    id: string;
+    title: string;
+    pageUrl: string;
+  };
+  toUIState: {
+    id: string;
+    title: string;
+    pageUrl: string;
+  };
+}
+
 // UiState関連の型
 export interface UiStateBase {
   id: string;

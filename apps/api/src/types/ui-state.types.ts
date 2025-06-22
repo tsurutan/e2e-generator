@@ -10,6 +10,7 @@ import {
   CreateUIStateTransitionRequest,
   OperationSessionResponse,
   UIStateTransitionResponse,
+  UIStateTransitionWithDetailsResponse,
 } from '@repo/shared-types';
 
 // Prismaから自動生成される型を使用
@@ -22,6 +23,7 @@ export type UpdateOperationSessionDto = Partial<Pick<Prisma.OperationSessionUpda
 export type CreateUIStateTransitionDto = CreateUIStateTransitionRequest;
 export type OperationSessionResponseDto = OperationSessionResponse;
 export type UIStateTransitionResponseDto = UIStateTransitionResponse;
+export type UIStateTransitionWithDetailsResponseDto = UIStateTransitionWithDetailsResponse;
 
 // 共通パッケージから再エクスポート
 export {

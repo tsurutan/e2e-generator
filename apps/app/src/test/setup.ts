@@ -1,6 +1,18 @@
 import '@testing-library/jest-dom'
+import { vi } from 'vitest'
 
 // Mock Electron APIs
+declare global {
+  interface Window {
+    electronAPI: {
+      openExternal: any
+      showSaveDialog: any
+      writeFile: any
+      readFile: any
+    }
+  }
+}
+
 global.window = global.window || {}
 global.window.electronAPI = {
   openExternal: vi.fn(),

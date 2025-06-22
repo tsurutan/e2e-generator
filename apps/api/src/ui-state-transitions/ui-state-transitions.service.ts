@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import {
   CreateUIStateTransitionDto,
   UIStateTransitionResponseDto,
+  UIStateTransitionWithDetailsResponseDto,
 } from '../types/ui-state.types';
 
 @Injectable()
@@ -172,7 +173,7 @@ export class UIStateTransitionsService {
     }
   }
 
-  async findBySessionWithDetails(sessionId: string): Promise<UIStateTransitionResponseDto[]> {
+  async findBySessionWithDetails(sessionId: string): Promise<UIStateTransitionWithDetailsResponseDto[]> {
     try {
       this.logger.log(`Finding UI state transitions with details for session ${sessionId}`);
 
@@ -200,6 +201,8 @@ export class UIStateTransitionsService {
         afterState: transition.afterState as any,
         metadata: transition.metadata,
         timestamp: transition.timestamp,
+        fromUIState: transition.fromUIState,
+        toUIState: transition.toUIState,
       }));
     } catch (error) {
       this.logger.error(`Failed to find UI state transitions with details for session ${sessionId}`, error.stack);
