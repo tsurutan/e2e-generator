@@ -1,7 +1,7 @@
 # BrowserPage.tsx 改善実装タスク
 
 ## ⚠️ 開発共通ルール
-**このタスクを実行する前に、必ず [`DEVELOPMENT_RULES.md`](./DEVELOPMENT_RULES.md) を読み、全てのルールに従ってください。**
+**このタスクを実行する前に、必ず [`DEVELOPMENT_RULES.md`](../../DEVELOPMENT_RULES.md) を読み、全てのルールに従ってください。**
 
 ### 🚨 実装開始前の必須チェック（Rule 10）
 - [ ] **テスト設計**: テストケースが全て定義済み（it.todoでも可）

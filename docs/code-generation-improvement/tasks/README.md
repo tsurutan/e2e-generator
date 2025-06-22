@@ -6,7 +6,7 @@
 
 ## ⚠️ 重要: 開発共通ルール
 
-**全てのタスクを実行する前に、必ず [`DEVELOPMENT_RULES.md`](./DEVELOPMENT_RULES.md) を読み、全てのルールに従ってください。**
+**全てのタスクを実行する前に、必ず [`DEVELOPMENT_RULES.md`](../../DEVELOPMENT_RULES.md) を読み、全てのルールに従ってください。**
 
 ### 🚨 新しい必須ルール（Version 1.2）
 - **Rule 10**: 実装開始前の必須チェック（テスト設計・型確認・技術選択・依存関係）
@@ -139,7 +139,7 @@ graph TD
 ## 実装ガイドライン
 
 ### 開発原則
-1. **共通ルール遵守**: [`DEVELOPMENT_RULES.md`](./DEVELOPMENT_RULES.md) の完全遵守
+1. **共通ルール遵守**: [`DEVELOPMENT_RULES.md`](../../DEVELOPMENT_RULES.md) の完全遵守
 2. **段階的実装**: 既存機能を壊さない漸進的改善
 3. **十分なテスト**: 各段階での包括的テスト
 4. **ドキュメント化**: 実装内容の詳細な記録
@@ -165,7 +165,7 @@ graph TD
 
 ## 開始方法
 
-1. **ルール確認**: [`DEVELOPMENT_RULES.md`](./DEVELOPMENT_RULES.md) を熟読
+1. **ルール確認**: [`DEVELOPMENT_RULES.md`](../../DEVELOPMENT_RULES.md) を熟読
 2. **環境準備**: 開発環境のセットアップ
 3. **タスク選択**: 優先度に基づいてタスクを選択
 4. **実装開始**: 各タスクファイルの手順に従って実装

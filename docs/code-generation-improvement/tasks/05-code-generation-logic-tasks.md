@@ -1,7 +1,7 @@
 # コード生成ロジック改善タスク
 
 ## ⚠️ 開発共通ルール
-**このタスクを実行する前に、必ず [`DEVELOPMENT_RULES.md`](./DEVELOPMENT_RULES.md) を読み、全てのルールに従ってください。**
+**このタスクを実行する前に、必ず [`DEVELOPMENT_RULES.md`](../../DEVELOPMENT_RULES.md) を読み、全てのルールに従ってください。**
 
 ### 特に重要なルール
 - 各実装完了後に `npm run check-types`, `npm run lint`, `npm run test` が全て通ること
