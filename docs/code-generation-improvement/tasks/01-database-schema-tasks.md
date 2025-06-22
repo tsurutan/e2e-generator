@@ -18,8 +18,8 @@
 **担当者**: バックエンド開発者
 
 #### 実装内容
-- [ ] Prismaスキーマに`OperationSession`モデルを追加
-- [ ] 以下のフィールドを含める：
+- [x] Prismaスキーマに`OperationSession`モデルを追加
+- [x] 以下のフィールドを含める：
   - `id`: String (UUID)
   - `projectId`: String (外部キー)
   - `startTime`: DateTime
@@ -32,9 +32,9 @@
 - `apps/api/prisma/schema.prisma`
 
 #### 検証方法
-- [ ] `npx prisma validate`でスキーマ検証
-- [ ] マイグレーション生成確認
-- [ ] 型定義生成確認
+- [x] `npx prisma validate`でスキーマ検証
+- [x] マイグレーション生成確認
+- [x] 型定義生成確認
 
 ---
 
@@ -44,8 +44,8 @@
 **担当者**: バックエンド開発者
 
 #### 実装内容
-- [ ] Prismaスキーマに`UIStateTransition`モデルを追加
-- [ ] 以下のフィールドを含める：
+- [x] Prismaスキーマに`UIStateTransition`モデルを追加
+- [x] 以下のフィールドを含める：
   - `id`: String (UUID)
   - `sessionId`: String (外部キー)
   - `projectId`: String (外部キー)
@@ -61,9 +61,9 @@
 - `apps/api/prisma/schema.prisma`
 
 #### 検証方法
-- [ ] リレーション設定の確認
-- [ ] インデックス設定の確認
-- [ ] 外部キー制約の確認
+- [x] リレーション設定の確認
+- [x] インデックス設定の確認
+- [x] 外部キー制約の確認
 
 ---
 
@@ -73,16 +73,16 @@
 **担当者**: バックエンド開発者
 
 #### 実装内容
-- [ ] 既存`Project`モデルに新しいリレーションを追加
-- [ ] `operationSessions`リレーション追加
-- [ ] `uiStateTransitions`リレーション追加
+- [x] 既存`Project`モデルに新しいリレーションを追加
+- [x] `operationSessions`リレーション追加
+- [x] `uiStateTransitions`リレーション追加
 
 #### 実装ファイル
 - `apps/api/prisma/schema.prisma`
 
 #### 検証方法
-- [ ] 既存リレーションが壊れていないことを確認
-- [ ] 新しいリレーションが正しく設定されていることを確認
+- [x] 既存リレーションが壊れていないことを確認
+- [x] 新しいリレーションが正しく設定されていることを確認
 
 ---
 
@@ -92,9 +92,9 @@
 **担当者**: バックエンド開発者
 
 #### 実装内容
-- [ ] マイグレーションファイル生成
-- [ ] 開発環境でのマイグレーション実行
-- [ ] 型定義の更新
+- [x] マイグレーションファイル生成
+- [x] 開発環境でのマイグレーション実行
+- [x] 型定義の更新
 
 #### 実行コマンド
 ```bash
@@ -104,9 +104,9 @@ npx prisma generate
 ```
 
 #### 検証方法
-- [ ] データベースにテーブルが作成されていることを確認
-- [ ] 型定義ファイルが更新されていることを確認
-- [ ] 既存データが影響を受けていないことを確認
+- [x] データベースにテーブルが作成されていることを確認
+- [x] 型定義ファイルが更新されていることを確認
+- [x] 既存データが影響を受けていないことを確認
 
 ---
 
@@ -187,12 +187,12 @@ npx prisma generate
 **担当者**: フロントエンド・バックエンド開発者
 
 #### 実装内容
-- [ ] TypeScript型定義ファイルの作成
-- [ ] `OperationSession`型
-- [ ] `UIStateTransition`型
-- [ ] `DOMSnapshot`型
-- [ ] `TriggerAction`型
-- [ ] `UserIntent`型
+- [x] TypeScript型定義ファイルの作成
+- [x] `OperationSession`型
+- [x] `UIStateTransition`型
+- [x] `DOMSnapshot`型
+- [x] `TriggerAction`型
+- [x] `UserIntent`型
 
 #### 実装ファイル
 - `apps/api/src/types/ui-state.types.ts`
@@ -206,10 +206,10 @@ npx prisma generate
 **担当者**: バックエンド開発者
 
 #### 実装内容
-- [ ] `OperationSession`のCRUD操作
-- [ ] `UIStateTransition`のCRUD操作
-- [ ] 基本的なクエリメソッド
-- [ ] エラーハンドリング
+- [x] `OperationSession`のCRUD操作
+- [x] `UIStateTransition`のCRUD操作
+- [x] 基本的なクエリメソッド
+- [x] エラーハンドリング
 
 #### 実装ファイル
 - `apps/api/src/operation-sessions/operation-sessions.service.ts`
@@ -220,10 +220,10 @@ npx prisma generate
 ## 完了基準
 
 ### Phase 1完了基準
-- [ ] 新しいテーブルが正常に作成されている
-- [ ] 既存機能が正常に動作している
-- [ ] 基本的なCRUD操作が実装されている
-- [ ] 型定義が正しく生成されている
+- [x] 新しいテーブルが正常に作成されている
+- [x] 既存機能が正常に動作している
+- [x] 基本的なCRUD操作が実装されている
+- [x] 型定義が正しく生成されている
 
 ### Phase 2完了基準
 - [ ] 既存モデルの拡張が完了している

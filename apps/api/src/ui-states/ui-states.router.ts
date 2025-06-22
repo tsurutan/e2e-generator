@@ -3,61 +3,37 @@ import { Input, Mutation, Query, Router } from 'nestjs-trpc';
 import { UiStatesService } from './ui-states.service';
 import { z } from 'zod';
 import { UiState } from '@prisma/client';
+import {
+  UiStateBaseSchema,
+  CreateUiStateRequestSchema,
+  UpdateUiStateRequestSchema,
+  UuidParamSchema,
+  PageQuerySchema,
+  ProjectIdParamSchema,
+} from '@repo/shared-types';
 
 @Router()
 export class UiStatesRouter {
   constructor(@Inject(UiStatesService) private readonly uiStatesService: UiStatesService) {}
 
   @Query({
-    output: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    })),
+    output: z.array(UiStateBaseSchema),
   })
   async findAll(): Promise<UiState[]> {
     return await this.uiStatesService.findAll();
   }
 
   @Query({
-    input: z.object({
-      projectId: z.string().uuid(),
-    }),
-    output: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    })),
+    input: ProjectIdParamSchema,
+    output: z.array(UiStateBaseSchema),
   })
   async findByProject(@Input('projectId') projectId: string): Promise<UiState[]> {
     return await this.uiStatesService.findByProject(projectId);
   }
 
   @Query({
-    input: z.object({
-      projectId: z.string().uuid(),
-      pageUrl: z.string().url(),
-    }),
-    output: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    })),
+    input: PageQuerySchema,
+    output: z.array(UiStateBaseSchema),
   })
   async findByPage(
     @Input('projectId') projectId: string,
@@ -67,43 +43,16 @@ export class UiStatesRouter {
   }
 
   @Query({
-    input: z.object({
-      id: z.string().uuid(),
-    }),
-    output: z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    }),
+    input: UuidParamSchema,
+    output: UiStateBaseSchema,
   })
   async findOne(@Input('id') id: string): Promise<UiState> {
     return await this.uiStatesService.findOne(id);
   }
 
   @Mutation({
-    input: z.object({
-      title: z.string().min(1).max(100),
-      html: z.string().optional(),
-      description: z.string().min(1),
-      pageUrl: z.string().url(),
-      projectId: z.string().uuid(),
-      isDefault: z.boolean().optional(),
-    }),
-    output: z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    }),
+    input: CreateUiStateRequestSchema,
+    output: UiStateBaseSchema,
   })
   async create(
     @Input('title') title: string,
@@ -124,23 +73,8 @@ export class UiStatesRouter {
   }
 
   @Mutation({
-    input: z.object({
-      id: z.string().uuid(),
-      title: z.string().min(1).max(100).optional(),
-      description: z.string().min(1).optional(),
-      pageUrl: z.string().url().optional(),
-      isDefault: z.boolean().optional(),
-    }),
-    output: z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    }),
+    input: UpdateUiStateRequestSchema,
+    output: UiStateBaseSchema,
   })
   async update(
     @Input('id') id: string,
@@ -158,29 +92,15 @@ export class UiStatesRouter {
   }
 
   @Mutation({
-    input: z.object({
-      id: z.string().uuid(),
-    }),
+    input: UuidParamSchema,
   })
   async remove(@Input('id') id: string): Promise<void> {
     await this.uiStatesService.remove(id);
   }
 
   @Query({
-    input: z.object({
-      projectId: z.string().uuid(),
-      pageUrl: z.string().url(),
-    }),
-    output: z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-      pageUrl: z.string(),
-      projectId: z.string(),
-      isDefault: z.boolean(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-    }).nullable(),
+    input: PageQuerySchema,
+    output: UiStateBaseSchema.nullable(),
   })
   async getDefaultUiState(
     @Input('projectId') projectId: string,

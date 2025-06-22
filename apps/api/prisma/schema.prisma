@@ -11,18 +11,20 @@ datasource db {
 }
 
 model Project {
-  id          String    @id @default(uuid())
-  name        String    @db.VarChar(100)
-  url         String
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  features    Feature[]
-  labels      Label[]
-  personas    Persona[]
-  pages       Page[]
-  edges       Edge[]
-  uiStates    UiState[]
+  id                  String               @id @default(uuid())
+  name                String               @db.VarChar(100)
+  url                 String
+  description         String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  features            Feature[]
+  labels              Label[]
+  personas            Persona[]
+  pages               Page[]
+  edges               Edge[]
+  uiStates            UiState[]
+  operationSessions   OperationSession[]
+  uiStateTransitions  UIStateTransition[]
 
   @@map("projects")
 }
@@ -41,21 +43,23 @@ model Page {
 }
 
 model UiState {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  pageUrl     String
-  projectId   String
-  html        String?
-  page        Page     @relation(fields: [pageUrl, projectId], references: [url, projectId])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  project     Project  @relation(fields: [projectId], references: [id])
-  fromEdges   Edge[]   @relation("FromUIState")
-  toEdges     Edge[]   @relation("ToUIState")
-  Label       Label[]
+  id                      String               @id @default(uuid())
+  title                   String
+  description             String
+  pageUrl                 String
+  projectId               String
+  html                    String?
+  page                    Page                 @relation(fields: [pageUrl, projectId], references: [url, projectId])
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  project                 Project              @relation(fields: [projectId], references: [id])
+  fromEdges               Edge[]               @relation("FromUIState")
+  toEdges                 Edge[]               @relation("ToUIState")
+  Label                   Label[]
+  fromUIStateTransitions  UIStateTransition[]  @relation("FromUIStateTransition")
+  toUIStateTransitions    UIStateTransition[]  @relation("ToUIStateTransition")
   /// isDefaultのUIStateはページごとに1つだけ存在する
-  isDefault   Boolean  @default(false)
+  isDefault               Boolean              @default(false)
 
   @@map("ui_states")
 }
@@ -134,4 +138,41 @@ model Persona {
   updatedAt DateTime @updatedAt
 
   @@map("personas")
+}
+
+model OperationSession {
+  id                  String               @id @default(uuid())
+  projectId           String
+  project             Project              @relation(fields: [projectId], references: [id])
+  startTime           DateTime             @default(now())
+  endTime             DateTime?
+  userGoal            String?
+  status              String               @default("active") // active/completed/abandoned
+  summary             Json?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  uiStateTransitions  UIStateTransition[]
+
+  @@map("operation_sessions")
+}
+
+model UIStateTransition {
+  id              String           @id @default(uuid())
+  sessionId       String
+  session         OperationSession @relation(fields: [sessionId], references: [id])
+  projectId       String
+  project         Project          @relation(fields: [projectId], references: [id])
+  fromUIStateId   String?
+  fromUIState     UiState?         @relation(fields: [fromUIStateId], references: [id], name: "FromUIStateTransition")
+  toUIStateId     String
+  toUIState       UiState          @relation(fields: [toUIStateId], references: [id], name: "ToUIStateTransition")
+  triggerAction   Json
+  beforeState     Json
+  afterState      Json
+  metadata        Json?
+  timestamp       DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("ui_state_transitions")
 }

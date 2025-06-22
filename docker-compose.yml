@@ -15,6 +15,22 @@ services:
     networks:
       - testpilot-network
 
+  postgres-test:
+    image: postgres:16
+    container_name: testpilot-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: testpilot_test_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - testpilot-network
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: testpilot-pgadmin
@@ -29,11 +45,13 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
+      - postgres-test
     networks:
       - testpilot-network
 
 volumes:
   postgres_data:
+  postgres_test_data:
   pgadmin_data:
 
 networks:
